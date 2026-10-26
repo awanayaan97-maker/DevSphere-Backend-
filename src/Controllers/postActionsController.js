@@ -3,161 +3,58 @@ const Post = require("../Models/Post");
 const PostBookmark = require("../Models/PostBookmark");
 const PostComment = require("../Models/PostCommentSchema");
 const User = require("../Models/UserSchema");
+const { toggleLikeService, createCommentService } = require("../services/interactionService");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
 const mongoose = require("mongoose")
 
 async function likePost(req, res, next) {
 
-    const userId = req.user.id;
-    const { id: postId } = req.params;
-
     try {
+        const userId = req.user.id;
+        const { id: postId } = req.params;
+        const result = await toggleLikeService(userId, postId, "post");
 
-        const findPost = await Post.findOne({ _id: postId })
-
-        if (!findPost) {
-            throw new ApiError(404, "post not found");
+        if (result.shouldEmit) {
+            req.io.to(result.receiverId).emit("like_notification", result.notificationData);
         }
 
-        const checkPostLikes = findPost.likes.some(item => item.toString() === userId.toString());
-
-        if (checkPostLikes) {
-
-            await Promise.all([
-                await Post.updateOne({ _id: postId }, { $pull: { likes: userId } }),
-                await Notification.deleteOne({ sender: userId, article: postId, type: "like" })
-            ])
-
-            res.status(200).json(new ApiResponse(200, "update", checkPostLikes))
-            return
-        }
-
-        if (!checkPostLikes) {
-
-            const [updateResult, checkNotification, senderData] = await Promise.all([
-                Post.findOneAndUpdate({ _id: postId }, { $addToSet: { likes: userId } }, { new: true }),
-                Notification.findOne({ sender: userId, receiver: findPostLikes.author, article: postId, type: "like" }),
-                User.findOne({ _id: userId }).select("firstName lastName profileImage role _id")
-            ]);
-
-            const likesCount = updateResult.likes.length;
-
-            if (checkNotification === null && updateResult.author.toString() !== userId.toString()) {
-
-                const newNotification = await Notification.create({
-                    sender: userId,
-                    receiver: updateResult.author,
-                    type: "like",
-                    article: null,
-                    post: postId,
-                    message: `${senderData.firstName} ${senderData.lastName} liked your post`
-                });
-
-                const notificationData = {
-                    ...newNotification._doc,
-                    senderData: senderData,
-                    likesCount: likesCount,
-                    articleId: null,
-                    post: postId
-                };
-
-                req.io.to(findPostLikes?.author.toString()).emit("like_notification", notificationData);
-            }
-
-            res.status(200).json(new ApiResponse(200, "Liked successfully", { likesCount, updateResult }));
-            return;
-        }
-
-        else throw new ApiError(500, "Something went wrong")
-
+        return res.status(200).json(
+            new ApiResponse(200, "Post like status updated", result.isLiked)
+        );
     }
+
     catch (error) {
-        next(error)
+        next(error);
     }
 
 }
 
 async function commentPost(req, res, next) {
 
-    const { text, parentComment } = req.body;
-    const { id: postId } = req.params
-
-    const userId = req.user.id;
-
-    if (!text?.trim()) return next(new ApiError(400, "Comment text is required"));
-    if (!postId?.trim()) return next(new ApiError(400, "post id is required"));
-
     try {
+        const { text, parentComment } = req.body;
+        const { id: postId } = req.params;
+        const userId = req.user.id;
 
-        const newComment = await PostComment.create({
-            postId,
-            user: userId,
-            text,
-            parentComment: parentComment || null
-        });
-
-        if (newComment) {
-
-            const [getPostOwner, senderData] = await Promise.all([
-                Post.findOne({ _id: newComment?.postId }).select("author"),
-                User.findOne({ _id: userId }).select("firstName lastName profileImage role _id")
-            ])
-
-            let receiverId = null;
-            let notificationMessage = "";
-            let type = "";
-
-            const data = {
-                ...newComment._doc,
-                authorData: senderData
-            }
-
-            if (!parentComment) {
-
-                receiverId = getPostOwner?.author
-                notificationMessage = `${senderData.firstName} ${senderData.lastName} commented on your post`;
-                type = "comment"
-
-            } else {
-
-                const parentCommentDoc = await PostComment.findById(parentComment).select("user");
-                receiverId = parentCommentDoc?.user;
-                notificationMessage = `${senderData.firstName} ${senderData.lastName} replied to your comment`;
-                type = "comment_like"
-            }
-
-            if (receiverId && receiverId.toString() !== userId.toString()) {
-
-                const newNotification = await Notification.create({
-                    sender: userId,
-                    receiver: receiverId,
-                    article: null,
-                    post: newComment.postId,
-                    type: type,
-                    message: notificationMessage
-                })
-
-                const notificationData = {
-                    ...newNotification._doc,
-                    senderData: senderData,
-                    data: data
-                }
-
-                req.io.to(receiverId.toString()).emit("comment_notification", notificationData)
-                req.io.to(newComment.articleId.toString()).emit("new_comment", data);
-            }
-
-            res.status(201).json(new ApiResponse(201, "Comment added", data));
-            return
+        if (!text?.trim()) {
+            throw new ApiError(400, "Comment text is required");
+        }
+        if (!postId?.trim()) {
+            throw new ApiError(400, "Post id is required");
         }
 
-        else throw new ApiError(500, "something went wrong")
+        const result = await createCommentService(userId, postId, text, parentComment, "post");
 
+        if (result.shouldNotify) {
+            req.io.to(result.receiverId).emit("comment_notification", result.notificationData);
+        }
+        req.io.to(result.targetId).emit("new_comment", result.data);
+        return res.status(201).json(new ApiResponse(201, "Comment added", result.data));
     }
 
     catch (error) {
-        next(error)
+        next(error);
     }
 
 }

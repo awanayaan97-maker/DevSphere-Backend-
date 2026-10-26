@@ -8,6 +8,8 @@ const { default: mongoose } = require("mongoose");
 const Follow = require("../Models/FollowSchema");
 const getPagination = require("../utils/pagination");
 const getSortOptions = require("../utils/sortingOptions,");
+const BookMark = require("../Models/BookmarkSchema");
+const ArticleComments = require("../Models/ArticleCommentsSchema");
 
 
 async function getPublishArticles(req, res, next) {
@@ -512,22 +514,26 @@ async function articleImageUpload(req, res, next) {
 async function deleteArticle(req, res, next) {
 
     const userId = req.user.id
-
     const { articleId } = req.params;
-
     if (!articleId?.trim()) return next(new ApiError(400, "Invalid path"))
 
     try {
 
-        const checkPublishArticles = await PublishArticle.findOneAndDelete({ _id: articleId, author: userId })
+        const findArticle = await PublishArticle.findOne({ _id: articleId, author: userId });
 
-        if (checkPublishArticles) return res.status(200).json(new ApiResponse(200, "Article Deleted successfully",))
+        if (findArticle) {
+            await Promise.all([
+                PublishArticle.deleteOne({ _id: articleId, author: userId }),
+                BookMark.deleteOne({ article: articleId }),
+                ArticleComments.deleteOne({ articleId: articleId })
+            ])
 
-        const checkDraftArticles = await DraftArticle.findOneAndDelete({ _id: articleId, author: userId })
+            return res.status(200).json(new ApiResponse(200, "Article Deleted successfully"))
+        }
 
-        if (checkDraftArticles) return res.status(200).json(new ApiResponse(200, "Article Deleted successfully",))
-
-        else return next(new ApiError(404, "Article not found or you don't have permission"));
+        else {
+            return next(new ApiError(404, "Article not found"));
+        }
 
     }
 

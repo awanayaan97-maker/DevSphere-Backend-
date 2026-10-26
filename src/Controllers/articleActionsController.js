@@ -6,71 +6,25 @@ const PublishArticle = require("../Models/PublishArticleSchema");
 const User = require("../Models/UserSchema");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
+const { toggleLikeService, createCommentService } = require("../services/interactionService");
 
 async function likeArticle(req, res, next) {
 
-    const userId = req.user.id;
-    const { articleId } = req.params;
-
     try {
 
-        const findArticleLikes = await PublishArticle.findOne({ _id: articleId })
+        const userId = req.user.id;
+        const { articleId } = req.params;
+        const result = await toggleLikeService(userId, articleId, "article");
 
-        if (!findArticleLikes) {
-            throw new ApiError(404, "Article not found");
+        if (result.shouldEmit) {
+            req.io.to(result.receiverId).emit("like_notification", result.notificationData);
         }
-
-        const checkArticleLikes = findArticleLikes.likes.some(item => item.toString() === userId.toString());
-
-        if (checkArticleLikes) {
-
-            await Promise.all([
-                await PublishArticle.updateOne({ _id: articleId }, { $pull: { likes: userId } }),
-                await Notification.deleteOne({ sender: userId, article: articleId, type: "like" })
-            ])
-
-            res.status(200).json(new ApiResponse(200, "update", checkArticleLikes))
-            return
-        }
-
-        if (!checkArticleLikes) {
-
-            const [updateResult, checkNotification, senderData] = await Promise.all([
-                PublishArticle.findOneAndUpdate({ _id: articleId }, { $addToSet: { likes: userId } }, { new: true }),
-                Notification.findOne({ sender: userId, receiver: findArticleLikes.author, article: articleId, type: "like" }),
-                User.findOne({ _id: userId }).select("firstName lastName profileImage role _id")
-            ]);
-
-            const likesCount = updateResult.likes.length;
-
-            if (checkNotification === null && updateResult.author !== userId) {
-
-                const newNotification = await Notification.create({
-                    sender: userId,
-                    receiver: updateResult.author,
-                    type: "like",
-                    article: articleId,
-                    message: `${senderData.firstName} ${senderData.lastName} liked your article`
-                });
-
-                const notificationData = {
-                    ...newNotification._doc,
-                    senderData: senderData,
-                    likesCount: likesCount,
-                    articleId: articleId
-                };
-
-                req.io.to(findArticleLikes?.author.toString()).emit("like_notification", notificationData);
-            }
-
-            res.status(200).json(new ApiResponse(200, "Liked successfully", { likesCount, updateResult }));
-            return;
-        }
-
-        else throw new ApiError(500, "Something went wrong")
-
+        return res.status(200).json(
+            new ApiResponse(200, "Article like status updated", result.isLiked)
+        );
     }
+
     catch (error) {
         next(error)
     }
@@ -79,86 +33,31 @@ async function likeArticle(req, res, next) {
 
 async function commentArticle(req, res, next) {
 
-    const { text, parentComment } = req.body;
-    const { id: articleId } = req.params
-    const userId = req.user.id;
-
-    if (!text?.trim()) return next(new ApiError(400, "Comment text is required"));
-    if (!articleId?.trim()) return next(new ApiError(400, "Article id is required"));
-
     try {
+        const { text, parentComment } = req.body;
+        const { id: articleId } = req.params;
+        const userId = req.user.id;
 
-        const newComment = await ArticleComments.create({
-            articleId,
-            user: userId,
-            text,
-            parentComment: parentComment || null
-        });
-
-        if (newComment) {
-
-            const [getArticleOwner, senderData] = await Promise.all([
-                PublishArticle.findOne({ _id: newComment?.articleId }).select("author"),
-                User.findOne({ _id: userId }).select("firstName lastName profileImage role _id")
-            ])
-
-            let receiverId = null;
-            let notificationMessage = "";
-            let type = "";
-
-            const data = {
-                ...newComment._doc,
-                authorData: senderData
-            }
-
-            if (!parentComment) {
-
-                receiverId = getArticleOwner?.author
-                notificationMessage = `${senderData.firstName} ${senderData.lastName} commented on your article`;
-                type = "comment"
-
-            } else {
-
-                const parentCommentDoc = await ArticleComments.findById(parentComment).select("user");
-                console.log(parentCommentDoc);
-                receiverId = parentCommentDoc?.user;
-                notificationMessage = `${senderData.firstName} ${senderData.lastName} replied to your comment`;
-                type = "comment_like"
-
-            }
-
-            if (receiverId && receiverId.toString() !== userId.toString()) {
-
-                const newNotification = await Notification.create({
-                    sender: userId,
-                    receiver: receiverId,
-                    article: newComment.articleId,
-                    type: type,
-                    message: notificationMessage
-                })
-
-                const notificationData = {
-                    ...newNotification._doc,
-                    senderData: senderData,
-                    data: data
-                }
-
-                req.io.to(receiverId.toString()).emit("comment_notification", notificationData)
-                req.io.to(newComment.articleId.toString()).emit("new_comment", data);
-            }
-
-            res.status(201).json(new ApiResponse(201, "Comment added", data));
-            return
+        if (!text?.trim()) {
+            throw new ApiError(400, "Comment text is required");
+        }
+        if (!articleId?.trim()) {
+            throw new ApiError(400, "Article id is required");
         }
 
-        else throw new ApiError(500, "something went wrong")
+        const result = await createCommentService(userId, articleId, text, parentComment, "article");
 
+        if (result.shouldNotify) {
+            req.io.to(result.receiverId).emit("comment_notification", result.notificationData);
+        }
+        req.io.to(result.targetId).emit("new_comment", result.data);
+
+        return res.status(201).json(new ApiResponse(201, "Comment added", result.data));
     }
 
     catch (error) {
-        next(error)
+        next(error);
     }
-
 }
 
 async function editComment(req, res, next) {

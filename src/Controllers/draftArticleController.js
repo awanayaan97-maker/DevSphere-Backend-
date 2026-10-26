@@ -63,6 +63,29 @@ async function draftArticle(req, res, next) {
 
 }
 
+async function deleteDraftArticle(req, res, next) {
 
+    try {
 
-module.exports = { getDraftArticles, draftArticle }
+        const userId = req.user?.id;
+        const { articleId } = req.params;
+        if (!articleId?.trim()) return next(new ApiError(400, "Invalid path"));
+
+        const findArticle = await DraftArticle.findOneAndDelete({ _id: articleId, author: userId });
+
+        if (findArticle) {
+            return res.status(200).json(new ApiResponse(200, "Article Deleted successfully",))
+        }
+
+        else {
+            return next(new ApiError(404, "Article not found"));
+        }
+    }
+
+    catch (error) {
+        next(error)
+    }
+
+}
+
+module.exports = { getDraftArticles, draftArticle, deleteDraftArticle }

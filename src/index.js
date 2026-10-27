@@ -25,7 +25,6 @@ const postRoute = require("./Routes/postRoutes");
 const discoverRoute = require("./Routes/discoverRoutes");
 const aiRoute = require("./Routes/aiRoutes");
 const dashboardRoute = require("./Routes/dashboardRoutes");
-const authMiddleware = require("./Middlewares/auhMiddleware");
 
 app.use(helmet());
 app.use(cors());

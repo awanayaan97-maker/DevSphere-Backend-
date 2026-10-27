@@ -1,12 +1,9 @@
-const Notification = require("../Models/NotificationSchema");
-const Post = require("../Models/Post");
-const PostBookmark = require("../Models/PostBookmark");
+
 const PostComment = require("../Models/PostCommentSchema");
-const User = require("../Models/UserSchema");
-const { toggleLikeService, createCommentService } = require("../services/interactionService");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
-const mongoose = require("mongoose")
+
+const { toggleLikeService, createCommentService, getCommentsService, editCommentService, toggleCommentLikeService, toggleBookmarkService } = require("../services/interactionService");
 
 async function likePost(req, res, next) {
 
@@ -61,202 +58,74 @@ async function commentPost(req, res, next) {
 
 async function getPostComments(req, res, next) {
 
-    const { id } = req.params;
-    const userId = req.user?.id ? new mongoose.Types.ObjectId(req.user.id) : null;
-
     try {
-        const postId = new mongoose.Types.ObjectId(id);
+        const { id } = req.params;
+        const userId = req.user?.id || null;
 
-        const comments = await PostComment.aggregate([
-            {
-                $match: {
-                    postId: postId,
-                    parentComment: null
-                }
-            },
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "user",
-                    foreignField: "_id",
-                    as: "authorData"
-                }
-            },
-            {
-                $unwind: "$authorData"
-            },
-            {
-                $lookup: {
-                    from: "postcomments",
-                    let: { commentId: "$_id" },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $eq: ["$parentComment", "$$commentId"]
-                                }
-                            }
-                        },
-                        {
-                            $lookup: {
-                                from: "users",
-                                localField: "user",
-                                foreignField: "_id",
-                                as: "authorData"
-                            }
-                        },
-                        {
-                            $unwind: "$authorData"
-                        }
-                    ],
-                    as: "replies"
-                }
-            },
-            {
-                $addFields: {
-                    hasLikeComment: userId ? { $in: [userId, "$likes"] } : false,
-                    commentLikes: { $size: "$likes" },
-                    replies: {
-                        $map: {
-                            input: "$replies",
-                            as: "reply",
-                            in: {
-                                $mergeObjects: [
-                                    "$$reply",
-                                    {
-                                        hasLikeReplies: userId ? { $in: [userId, "$$reply.likes"] } : false
-                                    }
-                                ]
-                            }
-                        }
-                    }
-                }
-            },
-            {
-                $project: {
-                    "authorData.firstName": 1,
-                    "authorData.lastName": 1,
-                    "authorData.profileImage": 1,
-                    "authorData.role": 1,
-                    "authorData._id": 1,
-                    postId: 1,
-                    text: 1,
-                    hasLikeComment: 1,
-                    commentLikes: 1,
-                    likes: 1,
-                    replies: 1,
-                    createdAt: 1
-                }
-            }
-        ]);
-
-
-        if (comments.length > 0) {
-            return res.status(200).json(new ApiResponse(200, "Post comments fetched successfully", comments));
+        if (!id?.trim()) {
+            throw new ApiError(400, "Post id is required");
         }
 
-        return res.status(200).json(new ApiResponse(200, "No comments found", []));
+        const comments = await getCommentsService(id, userId, "post");
 
-    } catch (error) {
+        const message = comments.length > 0 ? "Post comments fetched successfully" : "No comments found";
+
+        return res.status(200).json(
+            new ApiResponse(200, message, comments)
+        );
+    }
+
+    catch (error) {
         next(error);
     }
 }
 
-async function editComment(req, res, next) {
+async function editPostComment(req, res, next) {
+
     try {
         const { id } = req.params;
         const { text } = req.body;
 
         if (!text || !text.trim()) {
-            return next(new ApiError(400, "Comment text is required"));
+            throw new ApiError(400, "Comment text is required");
         }
 
-        const updatedComment = await PostComment.findByIdAndUpdate(
-            id,
-            { text: text.trim() },
-            { new: true }
-        );
-
-        if (!updatedComment) {
-            return next(new ApiError(404, "Comment not found"));
-        }
+        const updatedComment = await editCommentService(id, text, "post");
 
         return res.status(200).json(
             new ApiResponse(200, updatedComment, "Comment updated successfully")
         );
-
-    } catch (error) {
-        return next(new ApiError(500, error.message || "Internal Server Error"));
-    }
-}
-
-async function likePostComments(req, res, next) {
-
-    const userId = req.user?.id
-    const { id } = req.params;
-
-    if (!id?.trim()) return next(new ApiError(400, "something is missing"))
-
-    try {
-
-        const findPostComment = await PostComment.findOne({ _id: id });
-
-        const checkPostLikes = findPostComment.likes.some(item => item.toString() === userId.toString());
-
-        if (checkPostLikes) {
-
-            await Promise.all([
-                await PostComment.updateOne({ _id: id }, { $pull: { likes: userId } }),
-                await Notification.deleteOne({ sender: userId, receiver: findPostComment.user, type: "comment_like" })
-            ])
-
-            res.status(200).json(new ApiResponse(200, "update", checkPostLikes))
-            return
-        }
-
-        if (!checkPostLikes) {
-
-            const [updateLike, checkNotification, senderData,] = await Promise.all([
-
-                PostComment.updateOne({ _id: id }, { $addToSet: { likes: userId } }),
-
-                Notification.findOne({ sender: userId, receiver: findPostComment, type: "comment_like" }),
-
-                User.findOne({ _id: userId }).select("firstName lastName profileImage role _id"),
-
-            ]);
-
-            if (checkNotification === null && findPostComment.user.toString() !== userId.toString()) {
-
-                const newNotification = await Notification.create({
-                    sender: userId,
-                    receiver: findPostComment.user,
-                    type: "comment_like",
-                    article: null,
-                    post: findPostComment.postId,
-                    message: `${req.user.firstName} ${req.user.lastName} liked your comment`
-                })
-
-                const notificationData = {
-                    ...newNotification._doc,
-                    senderData: senderData
-                }
-
-                req.io.to(findPostComment.user.toString()).emit("comment_like_notification", notificationData)
-            }
-
-            res.status(200).json(new ApiResponse(200, "update", checkPostLikes))
-            return
-        }
-
-        else throw new ApiError(500, "Something went wrong")
-
     }
 
     catch (error) {
-        next(error)
+        next(error);
+    }
+}
+
+async function togglePostCommentLike(req, res, next) {
+
+    try {
+        const userId = req.user?.id;
+        const { id } = req.params;
+
+        if (!id?.trim()) {
+            throw new ApiError(400, "Comment id is missing");
+        }
+
+        const result = await toggleCommentLikeService(userId, id, "post");
+
+        if (result.shouldNotify) {
+            req.io.to(result.receiverId).emit("comment_like_notification", result.notificationData);
+        }
+
+        return res.status(200).json(
+            new ApiResponse(200, "Comment like status updated successfully", result.isLiked)
+        );
     }
 
+    catch (error) {
+        next(error);
+    }
 }
 
 async function deleteComment(req, res, next) {
@@ -283,35 +152,27 @@ async function deleteComment(req, res, next) {
     }
 }
 
-async function postBookmark(req, res, next) {
-
-    const { id } = req.params;
-    const userId = req.user.id;
+async function togglePostBookmark(req, res, next) {
 
     try {
+        const { id: postId } = req.params;
+        const userId = req.user?.id;
 
-        if (!userId || !id) return next(new ApiError(400, "Both User ID and post ID are required!"));
-
-        const existing = await PostBookmark.findOne({ user: userId, post: id });
-
-        if (existing) {
-            await Promise.all([
-                existing.deleteOne(),
-                Post.updateOne({ _id: id }, { $pull: { bookmark: userId } })
-            ]);
-            return res.status(200).json(new ApiResponse(200, "Bookmark deleted successfully!"));
+        if (!userId || !postId) {
+            throw new ApiError(400, "Both User ID and Post ID are required!");
         }
 
-        await Promise.all([
-            PostBookmark.create({ user: userId, post: id }),
-            Post.updateOne({ _id: id }, { $addToSet: { bookmark: userId } })
-        ]);
+        const result = await toggleBookmarkService(userId, postId, "post");
 
-        return res.status(201).json(new ApiResponse(201, "Bookmark saved successfully!"));
-
-    } catch (error) {
-        next(error)
+        const statusCode = result.isBookmarked ? 201 : 200;
+        return res.status(statusCode).json(
+            new ApiResponse(statusCode, result.message, result.isBookmarked,)
+        );
     }
-};
 
-module.exports = { likePost, commentPost, getPostComments, editComment, likePostComments, deleteComment, postBookmark }
+    catch (error) {
+        next(error);
+    }
+}
+
+module.exports = { likePost, commentPost, getPostComments, editPostComment, togglePostCommentLike, deleteComment, togglePostBookmark }

@@ -68,7 +68,7 @@ async function deleteDraftArticle(req, res, next) {
     try {
 
         const userId = req.user?.id;
-        const { articleId } = req.params;
+        const { id: articleId } = req.params;
         if (!articleId?.trim()) return next(new ApiError(400, "Invalid path"));
 
         const findArticle = await DraftArticle.findOneAndDelete({ _id: articleId, author: userId });

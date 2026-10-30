@@ -134,8 +134,7 @@ async function getUser(req, res, next) {
 async function getUserWithArticles(req, res, next) {
 
     const userId = req.user.id || null
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const { page, limit, type, sort } = req.validated.query;
     const skip = (page - 1) * 10;
 
     try {
@@ -419,8 +418,6 @@ async function followUser(req, res, next) {
     const follower = req.user.id;
     const { followedUser, action } = req.body;
 
-    if (!followedUser?.trim()) return next(new ApiError(404, 'something is missing'))
-
     try {
 
         if (action?.trim() === "follow") {
@@ -477,8 +474,6 @@ async function getConnections(req, res, next) {
 
     const { type } = req.params;
     const userId = req.user.id;
-
-    if (type?.trim() !== "followings" && type?.trim() !== "followers") return next(new ApiError(404, "route is not defiend"))
 
     try {
 

@@ -6,21 +6,23 @@ const authMiddleware = require("../Middlewares/auhMiddleware");
 const { userLimiter } = require("../Middlewares/rateLimiter")
 const optionalAuthMiddleware = require("../Middlewares/optionalAuthMiddleware");
 
-const { getPublishArticles, getSearchArticles, publishArticle, getSpecificPublishArticle, getSpecificArticle, deleteArticle, articleImageUpload, exploreArticles } =
+const { getArticlesFeed, searchArticles, publishArticle, getSpecificPublishArticle, getSpecificArticle, deleteArticle, articleImageUpload, exploreArticles } =
     require("../Controllers/publishArticleController");
 
 const { getDraftArticles, draftArticle, deleteDraftArticle } = require("../Controllers/draftArticleController");
 const { getArticleComments, commentArticle, likeArticle, deleteComment, editArticleComment, toggleArticleCommentLike, toggleArticleBookmark } =
     require("../Controllers/articleActionsController");
+const validateMiddleware = require("../Middlewares/validateMiddleware");
+const { feedArticleSchema, searchArticleSchema } = require("../Validators/articleValidation");
 
 // Publish Routes
-router.get("/publish", optionalAuthMiddleware, getPublishArticles);
+router.get("/publish", optionalAuthMiddleware, validateMiddleware(feedArticleSchema), getArticlesFeed);
 router.get("/publish/:id", optionalAuthMiddleware, getSpecificPublishArticle);
 router.post("/publish", authMiddleware, userLimiter, publishArticle);
 router.post("/publish/:articleId", authMiddleware, userLimiter, publishArticle);
 
 // Search & Explore Routes
-router.get("/search", optionalAuthMiddleware, getSearchArticles);
+router.get("/search", optionalAuthMiddleware, validateMiddleware(searchArticleSchema), searchArticles);
 router.get("/explore", optionalAuthMiddleware, exploreArticles);
 
 // Comments Routes

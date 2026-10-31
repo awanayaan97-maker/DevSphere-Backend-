@@ -10,260 +10,45 @@ const getPagination = require("../utils/pagination");
 const getSortOptions = require("../utils/sortingOptions,");
 const BookMark = require("../Models/BookmarkSchema");
 const ArticleComments = require("../Models/ArticleCommentsSchema");
+const { getArticlesFeedService, searchArticlesService } = require("../services/articleService");
 
 
-async function getPublishArticles(req, res, next) {
-
-    const userId = req.user?.id;
-
-    const { page, limit, skip } = getPagination(req.query);
-
-    const feed = req.query.feed === "following" ? "following" : "all";
-
-    const objectIdUserId = userId ? new mongoose.Types.ObjectId(userId) : null;
-
-    const sortOptions = getSortOptions()
-
-    const sortStage = sortOptions[req.query?.sort] || sortOptions.latest
+async function getArticlesFeed(req, res, next) {
 
     try {
 
-        let pipeline = [];
+        const userId = req.user?.id;
+        const articles = await getArticlesFeedService(userId, req.validated.query);
 
-        if (feed === "following") {
-
-            if (!userId) {
-                return res.status(200).json(new ApiResponse(200, "Articles data", []));
-            }
-
-            const followingDocs = await Follow.find({ follower: userId }).select("followedUser");
-            const followingIds = followingDocs.map((doc) => doc.followedUser);
-
-            if (followingIds.length === 0) {
-                return res.status(200).json(new ApiResponse(200, "Articles data", []));
-            }
-
-            pipeline.push({ $match: { author: { $in: followingIds } } });
-        }
-
-        pipeline.push(
-
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "_id",
-                    as: "authorDetails"
-                }
-            },
-
-            {
-                $lookup: {
-                    from: "follows",
-                    localField: "author",
-                    foreignField: "followedUser",
-                    as: "followingsData"
-                }
-            },
-
-            {
-                $lookup: {
-                    from: "articlecomments",
-                    let: { articleId: "$_id" },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        { $eq: ["$articleId", "$$articleId"] },
-                                        { $eq: ["$parentComment", null] }
-                                    ]
-                                }
-                            }
-                        },
-                    ],
-                    as: "commentsData"
-                }
-            },
-
-            { $unwind: "$authorDetails" },
-
-            {
-                $addFields: {
-                    likesCount: { $size: "$likes" },
-                    isLiked: { $in: [objectIdUserId, "$likes"] },
-                    isBookmark: { $in: [objectIdUserId, "$bookmark"] },
-                    bookmarkCounts: { $size: "$bookmark" },
-                    commentsCount: { $size: "$commentsData" },
-                    isFollowingAuthor: {
-                        $in: [
-                            objectIdUserId,
-                            {
-                                $map: {
-                                    input: "$followingsData",
-                                    as: "f",
-                                    in: "$$f.follower"
-                                }
-                            }
-                        ]
-                    }
-                }
-            },
-
-            { $sort: sortStage },
-
-            { $skip: skip },
-
-            { $limit: limit },
-
-            {
-                $project: {
-                    "authorDetails.profileImage": 1,
-                    "authorDetails.role": 1,
-                    "authorDetails.firstName": 1,
-                    "authorDetails.lastName": 1,
-                    "authorDetails._id": 1,
-                    title: 1,
-                    description: 1,
-                    tags: 1,
-                    content: 1,
-                    category: 1,
-                    readTime: 1,
-                    tableOfContent: 1,
-                    likes: 1,
-                    likesCount: 1,
-                    isLiked: 1,
-                    isBookmark: 1,
-                    bookmarkCounts: 1,
-                    commentsCount: 1,
-                    isFollowingAuthor: 1,
-                    createdAt: 1,
-                }
-            }
+        return res.status(200).json(
+            new ApiResponse(200, "Articles feed fetched successfully", articles)
         );
-
-        const articles = await PublishArticle.aggregate(pipeline);
-
-        return res.status(200).json(new ApiResponse(200, "Articles data", articles));
-
     }
+
     catch (error) {
-        next(error)
+        next(error);
     }
-
 }
 
-async function getSearchArticles(req, res, next) {
-
-    const currentUser = new mongoose.Types.ObjectId(req.user?.id) || null;
-    const { q } = req.query;
-    const { page, limit, skip } = getPagination(req.query);
-    const sortOptions = getSortOptions()
-
-    const sortStage = sortOptions[req.query.sort] || sortOptions.relevance
-
-    if (!q?.trim()) return next(new ApiError(400, "query is required"))
+async function searchArticles(req, res, next) {
 
     try {
 
-        const searchArticles = await PublishArticle.aggregate([
+        const userId = req.user?.id;
+        const articles = await searchArticlesService(userId, req.validated.query);
+        const message = articles.length > 0
+            ? "Articles fetched successfully"
+            : "No articles found matching your search";
 
-            {
-                $match: {
-                    $text: { $search: q }
-                }
-            },
+        return res.status(200).json(
+            new ApiResponse(200, message, articles)
+        );
 
-            {
-                $lookup: {
-                    from: "users",
-                    localField: "author",
-                    foreignField: "_id",
-                    as: "authorDetails"
-                }
-            },
-
-            {
-                $lookup: {
-                    from: "articlecomments",
-                    let: { articleId: "$_id" },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: {
-                                    $and: [
-                                        { $eq: ["$articleId", "$$articleId"] },
-                                        { $eq: ["$parentComment", null] }
-                                    ]
-                                }
-                            }
-                        },
-                    ],
-                    as: "commentsData"
-                }
-            },
-
-            {
-                $unwind: "$authorDetails"
-            },
-
-            {
-                $addFields: {
-                    relevanceScore: { $meta: "textScore" },
-                    isLiked: { $in: [currentUser, "$likes"] },
-                    isBookmark: { $in: [currentUser, "$bookmark"] },
-                    bookmarkCounts: { $size: "$bookmark" },
-                    likesCount: { $size: "$likes" },
-                    commentsCount: { $size: "$commentsData" },
-                }
-            },
-
-            {
-                $sort: sortStage
-            },
-
-            {
-                $skip: skip
-            },
-
-            {
-                $limit: limit
-            },
-
-            {
-                $project: {
-                    "authorDetails.firstName": 1,
-                    "authorDetails.lastName": 1,
-                    "authorDetails.profileImage": 1,
-                    "authorDetails.role": 1,
-                    title: 1,
-                    description: 1,
-                    tags: 1,
-                    content: 1,
-                    category: 1,
-                    readTime: 1,
-                    tableOfContent: 1,
-                    likes: 1,
-                    likesCount: 1,
-                    commentsCount: 1,
-                    isLiked: 1,
-                    isBookmark: 1,
-                    bookmarkCounts: 1,
-                    createdAt: 1
-                }
-            }
-
-        ])
-
-        if (searchArticles.length > 0) return res.status(200).json(new ApiResponse(200, "articles fetched", searchArticles))
-
-        if (searchArticles.length === 0) return res.status(200).json(new ApiResponse(200, "articles not found", searchArticles))
-    }
-
+    } 
+    
     catch (error) {
-        next(error)
+        next(error);
     }
-
 }
 
 async function getSpecificPublishArticle(req, res, next) {
@@ -721,4 +506,4 @@ async function exploreArticles(req, res, next) {
 
 }
 
-module.exports = { getPublishArticles, getSearchArticles, publishArticle, getSpecificPublishArticle, getSpecificArticle, articleImageUpload, deleteArticle, exploreArticles }
+module.exports = { getArticlesFeed, searchArticles, publishArticle, getSpecificPublishArticle, getSpecificArticle, articleImageUpload, deleteArticle, exploreArticles }

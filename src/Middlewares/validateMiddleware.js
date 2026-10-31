@@ -3,6 +3,8 @@ const ApiError = require("../utils/ApiError");
 
 const validateMiddleware = (schema) => (req, res, next) => {
 
+    console.log(req.query);
+
     const result = schema.safeParse({
         body: req.body,
         query: req.query,
@@ -25,6 +27,8 @@ const validateMiddleware = (schema) => (req, res, next) => {
 
     if (data.body) req.body = data.body;
     req.validated = data;
+    console.log(req.validated);
+    
 
     next();
 };

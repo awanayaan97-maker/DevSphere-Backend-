@@ -4,7 +4,6 @@ const ApiResponse = require("../utils/ApiResponse");
 const cloudinary = require("../Config/cloudinary");
 const { getArticlesFeedService, searchArticlesService, getArticleByIdService, getArticleForEditService, publishOrUpdateArticleService, deleteArticleService, exploreArticlesService } = require("../services/articleService");
 
-
 async function getArticlesFeed(req, res, next) {
 
     try {

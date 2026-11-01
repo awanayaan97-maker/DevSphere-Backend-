@@ -27,9 +27,6 @@ const validateMiddleware = (schema) => (req, res, next) => {
 
     if (data.body) req.body = data.body;
     req.validated = data;
-    console.log(req.validated);
-    
-
     next();
 };
 

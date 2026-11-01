@@ -7,7 +7,7 @@ const { signupService, googleAuthService, loginService, otpVerificationService, 
 async function signup(req, res, next) {
 
   try {
-    const result = await signupService.signup(req.body);
+    const result = await signupService.signup(req.validated.body);
     res.status(200).json(new ApiResponse(200, "Otp send successfully", result));
   }
 
@@ -52,7 +52,7 @@ async function login(req, res, next) {
 
   try {
 
-    const result = await loginService(req.body);
+    const result = await loginService(req.validated.body);
 
     res.status(200).json(
       new ApiResponse(
@@ -80,7 +80,7 @@ async function OTPVerification(req, res, next) {
 
   try {
 
-    const newUser = await otpVerificationService(req.body);
+    const newUser = await otpVerificationService(req.validated.body);
 
     return res.status(201).json(
       new ApiResponse(201, "User Created Successfully", newUser)
@@ -96,7 +96,7 @@ async function resendOTP(req, res, next) {
 
   try {
 
-    await resendOtpService(req.body);
+    await resendOtpService(req.validated.body);
     res.status(200).json(
       new ApiResponse(200, "New OTP sent to your email")
     );
@@ -111,7 +111,7 @@ async function forgotPassword(req, res, next) {
 
   try {
 
-    await forgotPasswordService(req.body);
+    await forgotPasswordService(req.validated.body);
     res.status(200).json(
       new ApiResponse(200, "Password reset link has been sent to your email.")
     );
@@ -127,8 +127,8 @@ async function resetPassword(req, res, next) {
   try {
 
     await resetPasswordService({
-      password: req.body.password,
-      token: req.params.token
+      password: req.validated.body.password,
+      token: req.validated.params.token
     });
 
     return res.status(200).json(
@@ -145,7 +145,7 @@ async function deactivateAccount(req, res, next) {
 
   try {
 
-    await deactivateAccountService(req.user.id, req.body);
+    await deactivateAccountService(req.user.id, req.validated.body);
 
     res.status(200).json(
       new ApiResponse(200, "Account deactivated successfully")

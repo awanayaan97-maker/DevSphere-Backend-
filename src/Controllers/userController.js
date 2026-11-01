@@ -42,7 +42,7 @@ async function getPublicUser(req, res, next) {
 
     try {
 
-        const { id } = req.params;
+        const { id } = req.validated.params;
         const loggedInUserId = req.user?.id;
         const userData = await getPublicUserService(id, loggedInUserId);
 
@@ -77,7 +77,7 @@ async function followUser(req, res, next) {
 
     try {
         const followerId = req.user.id;
-        const result = await followUserService(followerId, req.body);
+        const result = await followUserService(followerId, req.validated.body);
 
         if (result.action === "follow") {
             req.io.to(result.followedUser.toString()).emit("follow_notification", result.notificationData);
@@ -106,7 +106,7 @@ async function followUser(req, res, next) {
 async function getConnections(req, res, next) {
     
     try {
-        const { type } = req.params;
+        const { type } = req.validated.params;
         const userId = req.user.id;
         const result = await getConnectionsService(userId, type);
 

@@ -1,6 +1,16 @@
 
 const { z } = require("zod");
-const { paginationSchema } = require("./commonValidation");
+const { paginationSchema, objectId } = require("./commonValidation");
+const CATEGORIES = require("../constants/categories");
+
+function htmlToPlain(html) {
+    return html
+        .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/&nbsp;|&#160;/gi, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
 
 const feedArticleSchema = z.object({
 
@@ -30,4 +40,52 @@ const searchArticleSchema = z.object({
 
 })
 
-module.exports = { feedArticleSchema, searchArticleSchema }
+const getArticleByIdSchema = z.object({
+    params: objectId
+})
+
+const getArticleForEditSchema = z.object({
+    params: objectId
+})
+
+const publishArticleSchema = z.object({
+    body: z.object({
+        title: z.string("Title is required")
+            .trim()
+            .min(10, "Title must be at least 10 characters long")
+            .max(100, "Title cannot exceed 100 characters"),
+
+        content: z.string("Content is required")
+            .max(500000, "Content is too long")
+            .refine(
+                (html) => htmlToPlain(html).length >= 100,
+                "Article content must have at least 100 characters of text"
+            ),
+
+        tags: z.array(
+            z.object({
+                tagValue: z.string().trim().toLowerCase().min(1).max(30)
+            })
+        ).max(10, "You can add at most 10 tags").default([]),
+
+        category: z.enum(CATEGORIES, "Please select a valid category"),
+
+        params: objectId.optional()
+    })
+})
+
+const deleteArticleSchema = z.object({
+    params: objectId
+})
+
+const exploreArticlesSchema = z.object({
+    query: paginationSchema.extend({
+        sort: z.string("sort is required")
+            .trim()
+            .pipe(z.enum(["latest", "trending", "mostDiscuss"], "Route is not defined").default("latest")),
+
+        category: z.enum(CATEGORIES, "Please select a valid category").optional()
+    })
+})
+
+module.exports = { feedArticleSchema, searchArticleSchema, getArticleByIdSchema, getArticleForEditSchema, publishArticleSchema, deleteArticleSchema, exploreArticlesSchema }

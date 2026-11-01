@@ -6,24 +6,25 @@ const authMiddleware = require("../Middlewares/auhMiddleware");
 const { userLimiter } = require("../Middlewares/rateLimiter")
 const optionalAuthMiddleware = require("../Middlewares/optionalAuthMiddleware");
 
-const { getArticlesFeed, searchArticles, publishArticle, getSpecificPublishArticle, getSpecificArticle, deleteArticle, articleImageUpload, exploreArticles } =
+const { getArticlesFeed, searchArticles, publishArticle, getArticleById, getArticleForEdit, deleteArticle, articleImageUpload, exploreArticles } =
     require("../Controllers/publishArticleController");
 
 const { getDraftArticles, draftArticle, deleteDraftArticle } = require("../Controllers/draftArticleController");
 const { getArticleComments, commentArticle, likeArticle, deleteComment, editArticleComment, toggleArticleCommentLike, toggleArticleBookmark } =
     require("../Controllers/articleActionsController");
 const validateMiddleware = require("../Middlewares/validateMiddleware");
-const { feedArticleSchema, searchArticleSchema } = require("../Validators/articleValidation");
+const { feedArticleSchema, searchArticleSchema, publishArticleSchema, deleteArticleSchema, getArticleForEditSchema, exploreArticlesSchema } = require("../Validators/articleValidation");
+const { getArticleByIdService } = require("../services/articleService");
 
 // Publish Routes
 router.get("/publish", optionalAuthMiddleware, validateMiddleware(feedArticleSchema), getArticlesFeed);
-router.get("/publish/:id", optionalAuthMiddleware, getSpecificPublishArticle);
-router.post("/publish", authMiddleware, userLimiter, publishArticle);
+router.get("/publish/:id", optionalAuthMiddleware, validateMiddleware(getArticleByIdService), getArticleById);
+router.post("/publish", authMiddleware, userLimiter, validateMiddleware(publishArticleSchema), publishArticle);
 router.post("/publish/:articleId", authMiddleware, userLimiter, publishArticle);
 
 // Search & Explore Routes
 router.get("/search", optionalAuthMiddleware, validateMiddleware(searchArticleSchema), searchArticles);
-router.get("/explore", optionalAuthMiddleware, exploreArticles);
+router.get("/explore", optionalAuthMiddleware, validateMiddleware(exploreArticlesSchema), exploreArticles);
 
 // Comments Routes
 router.get("/comment/:id", optionalAuthMiddleware, getArticleComments);
@@ -46,7 +47,7 @@ router.patch("/like-articleComment/:id", authMiddleware, userLimiter, toggleArti
 router.post("/image-upload", authMiddleware, userLimiter, upload.single("articleImage"), articleImageUpload);
 
 // Specific Article 
-router.get("/:id", authMiddleware, getSpecificArticle);
-router.delete("/:articleId", authMiddleware, userLimiter, deleteArticle);
+router.get("/:id", authMiddleware, validateMiddleware(getArticleForEditSchema), getArticleForEdit);
+router.delete("/:articleId", authMiddleware, userLimiter, validateMiddleware(deleteArticleSchema), deleteArticle);
 
 module.exports = router

@@ -1,11 +1,14 @@
 
 const mongoose = require("mongoose");
+const { minLength, maxLength } = require("zod");
 
 const PublishArticleSchema = new mongoose.Schema({
 
     title: {
         type: String,
-        required: true
+        required: true,
+        minLength: 10,
+        maxLength: 100
     },
 
     description: {
@@ -20,7 +23,7 @@ const PublishArticleSchema = new mongoose.Schema({
                     type: String,
                     required: true,
                     trim: true,
-                    maxlength: 30,
+                    maxlength: 10,
                     lowercase: true,
                 },
                 tagId: {

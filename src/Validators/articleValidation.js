@@ -80,12 +80,13 @@ const deleteArticleSchema = z.object({
 
 const exploreArticlesSchema = z.object({
     query: paginationSchema.extend({
-        sort: z.string("sort is required")
-            .trim()
-            .pipe(z.enum(["latest", "trending", "mostDiscuss"], "Route is not defined").default("latest")),
-
-        category: z.enum(CATEGORIES, "Please select a valid category").optional()
+        sort: z.enum(["latest", "trending", "mostDiscuss"], "Invalid sort option").default("latest"),
+        tag: z.string().trim().toLowerCase().min(1).max(30).optional(),
+        category: z.preprocess(
+            (v) => (v === "" ? undefined : v),
+            z.enum(CATEGORIES, "Please select a valid category").optional()
+        )
     })
-})
+});
 
 module.exports = { feedArticleSchema, searchArticleSchema, getArticleByIdSchema, getArticleForEditSchema, publishArticleSchema, deleteArticleSchema, exploreArticlesSchema }

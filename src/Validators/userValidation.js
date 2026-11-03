@@ -1,6 +1,6 @@
 
 const { z } = require("zod");
-const { paginationSchema, objectId } = require("./commonValidation");
+const { paginationSchema, objectId, bodyObjectId } = require("./commonValidation");
 
 
 const userArticleSchema = z.object({
@@ -22,7 +22,7 @@ const userConnectionSchema = z.object({
 const userFollowSchema = z.object({
 
     body: z.object({
-        followedUser: objectId,
+        followedUser: bodyObjectId,
         action: z.enum(["follow", "unfollow"], {
             message: "Action must be either 'follow' or 'unfollow'",
         }),

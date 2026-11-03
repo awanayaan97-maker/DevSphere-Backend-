@@ -13,12 +13,11 @@ const { getDraftArticles, draftArticle, deleteDraftArticle } = require("../Contr
 const { getArticleComments, commentArticle, likeArticle, deleteComment, editArticleComment, toggleArticleCommentLike, toggleArticleBookmark } =
     require("../Controllers/articleActionsController");
 const validateMiddleware = require("../Middlewares/validateMiddleware");
-const { feedArticleSchema, searchArticleSchema, publishArticleSchema, deleteArticleSchema, getArticleForEditSchema, exploreArticlesSchema } = require("../Validators/articleValidation");
-const { getArticleByIdService } = require("../services/articleService");
+const { feedArticleSchema, searchArticleSchema, publishArticleSchema, deleteArticleSchema, getArticleForEditSchema, exploreArticlesSchema, getArticleByIdSchema } = require("../Validators/articleValidation");
 
 // Publish Routes
 router.get("/publish", optionalAuthMiddleware, validateMiddleware(feedArticleSchema), getArticlesFeed);
-router.get("/publish/:id", optionalAuthMiddleware, validateMiddleware(getArticleByIdService), getArticleById);
+router.get("/publish/:id", optionalAuthMiddleware, validateMiddleware(getArticleByIdSchema), getArticleById);
 router.post("/publish", authMiddleware, userLimiter, validateMiddleware(publishArticleSchema), publishArticle);
 router.post("/publish/:articleId", authMiddleware, userLimiter, publishArticle);
 

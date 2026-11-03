@@ -6,8 +6,13 @@ const paginationSchema = z.object({
     limit: z.coerce.number().int().min(1).max(30).default(10)
 });
 
-const objectId = z.string("Id is required")
-    .regex(/^[0-9a-fA-F]{24}$/, "Invalid id");
+const objectId = z.object({
+   id: z.string("Id is required")
+    .regex(/^[0-9a-fA-F]{24}$/, "Invalid id")
+});
+
+const bodyObjectId = z.string("Id is required")
+    .regex(/^[0-9a-fA-F]{24}$/, "Invalid id")
 
 
-module.exports = { paginationSchema, objectId }
+module.exports = { paginationSchema, objectId, bodyObjectId }

@@ -5,6 +5,8 @@ const PostBookmark = require("../Models/PostBookmark");
 const BookMark = require("../Models/BookmarkSchema");
 const User = require("../Models/UserSchema");
 const mongoose = require("mongoose");
+const ArticleComments = require("../Models/ArticleCommentsSchema");
+const PostComment = require("../Models/PostCommentSchema");
 
 const getTargetConfig = (targetType) => {
     if (targetType === "article") {

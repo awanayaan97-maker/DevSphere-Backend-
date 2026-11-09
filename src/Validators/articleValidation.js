@@ -13,17 +13,10 @@ function htmlToPlain(html) {
 }
 
 const feedArticleSchema = z.object({
-
     query: paginationSchema.extend({
-        feed: z.string("Feed is required")
-            .trim()
-            .pipe(z.enum(["following", "all"], "Route is not defined").default("all")),
-
-        sort: z.string("sort is required")
-            .trim()
-            .pipe(z.enum(["latest", "oldest", "mostLiked"], "Route is not defined").default("latest"))
+        feed: z.enum(["following", "all"], "Route is not defined").default("all"),
+        sort: z.enum(["latest", "oldest", "mostLiked"], "Invalid sort option").default("latest")
     })
-
 })
 
 const searchArticleSchema = z.object({
@@ -49,6 +42,7 @@ const getArticleForEditSchema = z.object({
 })
 
 const publishArticleSchema = z.object({
+
     body: z.object({
         title: z.string("Title is required")
             .trim()
@@ -64,13 +58,12 @@ const publishArticleSchema = z.object({
 
         tags: z.array(
             z.object({
-                tagValue: z.string().trim().toLowerCase().min(1).max(30)
+                tagValue: z.string().trim().toLowerCase().min(1).max(30),
+                tagId: z.number().int()
             })
         ).max(10, "You can add at most 10 tags").default([]),
 
         category: z.enum(CATEGORIES, "Please select a valid category"),
-
-        params: objectId.optional()
     })
 })
 

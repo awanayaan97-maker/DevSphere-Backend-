@@ -305,7 +305,7 @@ async function getArticleForEditService(userId, articleId) {
     const draftArticle = await DraftArticle.findOne({
         _id: articleId,
         author: userId
-    });
+    }).select("-bookmark -likes -readTime -tableOfContent");
 
     if (draftArticle) {
         return { article: draftArticle, type: "draft" };
@@ -314,7 +314,7 @@ async function getArticleForEditService(userId, articleId) {
     const publishArticle = await PublishArticle.findOne({
         _id: articleId,
         author: userId
-    });
+    }).select("-bookmark -likes -readTime -tableOfContent");
 
     if (publishArticle) {
         return { article: publishArticle, type: "published" };

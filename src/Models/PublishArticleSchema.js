@@ -23,7 +23,7 @@ const PublishArticleSchema = new mongoose.Schema({
                     type: String,
                     required: true,
                     trim: true,
-                    maxlength: 10,
+                    maxlength: 30,
                     lowercase: true,
                 },
                 tagId: {

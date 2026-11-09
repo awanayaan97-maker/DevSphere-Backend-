@@ -46,8 +46,7 @@ async function getArticleById(req, res, next) {
 
     try {
         const { id } = req.validated.params;
-        const loggedInUserId = req.user?.id;
-
+        const loggedInUserId = req.user?.id;    
         const article = await getArticleByIdService(id, loggedInUserId);
 
         return res.status(200).json(
@@ -66,7 +65,6 @@ async function getArticleForEdit(req, res, next) {
         const userId = req.user.id;
         const { id } = req.params;
         const result = await getArticleForEditService(userId, id);
-
         return res.status(200).json(
             new ApiResponse(200, "Article fetched successfully for editing", result.article)
         );
@@ -83,7 +81,8 @@ async function publishArticle(req, res, next) {
     try {
         const userId = req.user.id;
         const bodyData = req.validated.body;
-        const articleId = req.validated?.params?.articleId;
+        const articleId = req.params?.id;
+        console.log(articleId)
         const result = await publishOrUpdateArticleService(userId, bodyData, articleId);
         let statusCode = 200;
         let message = "Article updated successfully";

@@ -1,4 +1,4 @@
-const { promises } = require("nodemailer/lib/xoauth2");
+
 const ArticleComments = require("../Models/ArticleCommentsSchema");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
@@ -134,9 +134,7 @@ async function getArticleComments(req, res, next) {
         if (!id?.trim()) {
             throw new ApiError(400, "Article id is required");
         }
-
         const comments = await getCommentsService(id, userId, "article");
-
         const message = comments.length > 0 ? "Article comments fetched successfully" : "No comments found";
 
         return res.status(200).json(

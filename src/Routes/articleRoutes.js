@@ -19,7 +19,7 @@ const { feedArticleSchema, searchArticleSchema, publishArticleSchema, deleteArti
 router.get("/publish", optionalAuthMiddleware, validateMiddleware(feedArticleSchema), getArticlesFeed);
 router.get("/publish/:id", optionalAuthMiddleware, validateMiddleware(getArticleByIdSchema), getArticleById);
 router.post("/publish", authMiddleware, userLimiter, validateMiddleware(publishArticleSchema), publishArticle);
-router.post("/publish/:articleId", authMiddleware, userLimiter, publishArticle);
+router.post("/publish/:id", authMiddleware, userLimiter, validateMiddleware(publishArticleSchema), publishArticle);
 
 // Search & Explore Routes
 router.get("/search", optionalAuthMiddleware, validateMiddleware(searchArticleSchema), searchArticles);

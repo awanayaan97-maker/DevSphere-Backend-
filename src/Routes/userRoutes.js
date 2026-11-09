@@ -14,7 +14,7 @@ router.get("/articles", authMiddleware, validateMiddleware(userArticleSchema), g
 router.get("/public/:id", optionalAuthMiddleware, validateMiddleware(getPublicUserSchema), getPublicUser);
 router.get("/connections/:type", authMiddleware, validateMiddleware(userConnectionSchema), getConnections);
 
-router.put("/me", authMiddleware, userLimiter, upload.fields([{ name: "profileImage", maxCount: 1 }, { name: "coverImage", maxCount: 1 }]), updateUser),
+router.put("/", authMiddleware, userLimiter, upload.fields([{ name: "profileImage", maxCount: 1 }, { name: "coverImage", maxCount: 1 }]), updateUser),
     router.put("/notification", authMiddleware, markNotificationsAsRead)
 
 router.post("/follow", authMiddleware, validateMiddleware(userFollowSchema), followUser)

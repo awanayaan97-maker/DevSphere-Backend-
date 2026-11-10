@@ -25,42 +25,42 @@ async function getDraftArticles(req, res, next) {
     }
 }
 
+const mongoose = require("mongoose");
+
 async function draftArticle(req, res, next) {
 
-    const { title } = req.body ?? {};
-    if (!title) return next(new ApiError(400, "Title is required"));
-
-    const userId = req.user.id
-    let { articleId, ...draftArticleData } = req.body;
-    draftArticleData.author = userId
-
     try {
+        const { title } = req.body ?? {};
+        const userId = req.user?.id;
+        if (!title) return next(new ApiError(400, "Title is required"));
 
-        if (articleId?.trim()) {
+        let { articleId, ...draftArticleData } = req.body;
+        draftArticleData.author = userId;
+        let query = { author: userId };
 
-            const checkDraftArticle = await DraftArticle.findOneAndUpdate(
-                { _id: new mongoose.Types.ObjectId(articleId), author: userId },
-                { $set: draftArticleData },
-                { new: true })
-
-            if (checkDraftArticle) return res.status(200).json(new ApiResponse(200, "article draft successfully", checkDraftArticle))
-
-            else throw new ApiError(500, "Article does not draft")
-
+        if (articleId && typeof articleId === "string" && articleId.trim() !== "") {
+            if (mongoose.Types.ObjectId.isValid(articleId)) {
+                query._id = new mongoose.Types.ObjectId(articleId);
+            }
         }
 
-        const data = await DraftArticle.create(draftArticleData);
+        const draftArticle = await DraftArticle.findOneAndUpdate(
+            query,
+            { $set: draftArticleData },
+            {
+                new: true,         
+                upsert: true,      
+                setDefaultsOnInsert: true
+            }
+        );
 
-        if (data) return res.status(200).json(new ApiResponse(200, "article draft successfully", data))
+        return res.status(200).json(
+            new ApiResponse(200, "Article drafted successfully", draftArticle)
+        );
 
-        else throw new ApiError(500, "something went wrong")
-
+    } catch (error) {
+        next(error);
     }
-
-    catch (error) {
-        next(error)
-    }
-
 }
 
 async function deleteDraftArticle(req, res, next) {

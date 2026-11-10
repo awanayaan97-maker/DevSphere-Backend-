@@ -136,10 +136,8 @@ async function deleteArticle(req, res, next) {
 
     try {
         const userId = req.user.id;
-        const { articleId } = req.validated.params;
-
-        await deleteArticleService(userId, articleId);
-
+        const { id } = req.validated.params;
+        await deleteArticleService(userId, id);
         return res.status(200).json(
             new ApiResponse(200, "Article deleted successfully")
         );

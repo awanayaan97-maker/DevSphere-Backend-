@@ -53,7 +53,7 @@ async function login(req, res, next) {
   try {
 
     const result = await loginService(req.validated.body);
-
+    
     res.status(200).json(
       new ApiResponse(
         200,

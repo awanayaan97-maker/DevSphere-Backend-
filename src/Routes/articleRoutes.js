@@ -47,6 +47,6 @@ router.post("/image-upload", authMiddleware, userLimiter, upload.single("article
 
 // Specific Article 
 router.get("/:id", authMiddleware, validateMiddleware(getArticleForEditSchema), getArticleForEdit);
-router.delete("/:articleId", authMiddleware, userLimiter, validateMiddleware(deleteArticleSchema), deleteArticle);
+router.delete("/:id", authMiddleware, userLimiter, validateMiddleware(deleteArticleSchema), deleteArticle);
 
 module.exports = router

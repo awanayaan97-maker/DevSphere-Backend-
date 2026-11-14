@@ -1,13 +1,29 @@
 
 const express = require("express");
-const { getUser, getUserWithArticles, updateUser, followUser, getConnections, getPublicUser, markNotificationsAsRead } = require("../Controllers/userController");
-const optionalAuthMiddleware = require("../Middlewares/optionalAuthMiddleware");
-const { userLimiter } = require("../Middlewares/rateLimiter");
-const { userArticleSchema, getPublicUserSchema, userConnectionSchema, userFollowSchema } = require("../Validators/userValidation");
+const router = express.Router();
 const upload = require("../Middlewares/multer");
 const validateMiddleware = require("../Middlewares/validateMiddleware");
 const authMiddleware = require("../Middlewares/auhMiddleware");
-const router = express.Router();
+const optionalAuthMiddleware = require("../Middlewares/optionalAuthMiddleware");
+const { userLimiter } = require("../Middlewares/rateLimiter");
+
+const { 
+    getUser, 
+    getUserWithArticles, 
+    updateUser, 
+    followUser, 
+    getConnections, 
+    getPublicUser, 
+    markNotificationsAsRead 
+} = require("../Controllers/userController");
+
+const { 
+    userArticleSchema, 
+    getPublicUserSchema, 
+    userConnectionSchema, 
+    userFollowSchema 
+} = require("../Validators/userValidation");
+
 
 router.get("/", authMiddleware, getUser);
 router.get("/articles", authMiddleware, validateMiddleware(userArticleSchema), getUserWithArticles);

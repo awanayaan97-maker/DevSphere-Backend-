@@ -5,15 +5,42 @@ const upload = require("../Middlewares/multer");
 const authMiddleware = require("../Middlewares/auhMiddleware");
 const { userLimiter } = require("../Middlewares/rateLimiter")
 const optionalAuthMiddleware = require("../Middlewares/optionalAuthMiddleware");
+const validateMiddleware = require("../Middlewares/validateMiddleware");
 
-const { getArticlesFeed, searchArticles, publishArticle, getArticleById, getArticleForEdit, deleteArticle, articleImageUpload, exploreArticles } =
-    require("../Controllers/publishArticleController");
+const {
+    getArticlesFeed,
+    searchArticles,
+    publishArticle,
+    getArticleById,
+    getArticleForEdit,
+    deleteArticle,
+    articleImageUpload,
+    exploreArticles
+} = require("../Controllers/publishArticleController");
+
+const {
+    feedArticleSchema,
+    searchArticleSchema,
+    publishArticleSchema,
+    deleteArticleSchema,
+    getArticleForEditSchema,
+    exploreArticlesSchema,
+    getArticleByIdSchema
+} = require("../Validators/articleValidation");
+
+const {
+    getArticleComments,
+    commentArticle,
+    likeArticle,
+    deleteComment,
+    editArticleComment,
+    toggleArticleCommentLike,
+    toggleArticleBookmark
+
+} = require("../Controllers/articleActionsController");
 
 const { getDraftArticles, draftArticle, deleteDraftArticle } = require("../Controllers/draftArticleController");
-const { getArticleComments, commentArticle, likeArticle, deleteComment, editArticleComment, toggleArticleCommentLike, toggleArticleBookmark } =
-    require("../Controllers/articleActionsController");
-const validateMiddleware = require("../Middlewares/validateMiddleware");
-const { feedArticleSchema, searchArticleSchema, publishArticleSchema, deleteArticleSchema, getArticleForEditSchema, exploreArticlesSchema, getArticleByIdSchema } = require("../Validators/articleValidation");
+
 
 // Publish Routes
 router.get("/publish", optionalAuthMiddleware, validateMiddleware(feedArticleSchema), getArticlesFeed);

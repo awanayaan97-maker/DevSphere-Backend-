@@ -1,16 +1,29 @@
 
 const express = require("express");
-const { createPost, getPost, deletePost, getSinglePost } = require("../Controllers/postController");
-
-const { likePost, commentPost, getPostComments, deleteComment, editPostComment, togglePostCommentLike, togglePostBookmark } =
-require("../Controllers/postActionsController");
-
+const router = express.Router();
 const authMiddleware = require("../Middlewares/auhMiddleware");
 const { userLimiter } = require("../Middlewares/rateLimiter")
 const upload = require("../Middlewares/multer");
 const optionalAuthMiddleware = require("../Middlewares/optionalAuthMiddleware");
 
-const router = express.Router();
+
+const { 
+    createPost, 
+    getPost, 
+    deletePost, 
+    getSinglePost 
+} = require("../Controllers/postController");
+
+const { 
+    likePost, 
+    commentPost, 
+    getPostComments, 
+    deleteComment, 
+    editPostComment, 
+    togglePostCommentLike, 
+    togglePostBookmark
+} = require("../Controllers/postActionsController");
+
 // Posts Routes
 router.post("/", authMiddleware, userLimiter, upload.array("postImages", 5), createPost);
 router.get('/', optionalAuthMiddleware, getPost);

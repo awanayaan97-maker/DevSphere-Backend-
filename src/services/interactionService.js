@@ -7,6 +7,7 @@ const User = require("../Models/UserSchema");
 const mongoose = require("mongoose");
 const ArticleComments = require("../Models/ArticleCommentsSchema");
 const PostComment = require("../Models/PostCommentSchema");
+const ApiError = require("../utils/ApiError");
 
 const getTargetConfig = (targetType) => {
     if (targetType === "article") {
@@ -292,8 +293,8 @@ async function getCommentsService(targetId, userId, targetType) {
         },
         {
             $addFields: {
-                hasLikeComment: parsedUserId ? { $in: [parsedUserId, "$likes"] } : false,
-                commentLikes: { $size: "$likes" },
+               isLiked: parsedUserId ? { $in: [parsedUserId, "$likes"] } : false,
+                likesCount: { $size: "$likes" },
                 replies: {
                     $map: {
                         input: "$replies",
@@ -319,8 +320,8 @@ async function getCommentsService(targetId, userId, targetType) {
                 "authorData._id": 1,
                 [config.idField]: 1,
                 text: 1,
-                hasLikeComment: 1,
-                commentLikes: 1,
+                isLiked: 1,
+                likesCount: 1,
                 likes: 1,
                 replies: 1,
                 createdAt: 1

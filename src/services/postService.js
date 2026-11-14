@@ -215,7 +215,7 @@ async function getPostService(currentUser, type, topic, limit, skip, sortStage) 
                 likesCount: { $size: { $ifNull: ["$likes", []] } },
                 isLiked: { $in: [currentUser, { $ifNull: ["$likes", []] }] },
                 commentsCount: { $size: "$commentsData" },
-                savesCount: { $size: "$bookmark" },
+                bookmarksCount: { $size: "$bookmark" },
                 isBookmark: { $in: [currentUser, { $ifNull: ["$bookmark", []] }] },
                 isFollowingAuthor: { $gt: [{ $size: "$followData" }, 0] }
             }
@@ -247,7 +247,7 @@ async function getPostService(currentUser, type, topic, limit, skip, sortStage) 
                 isLiked: 1,
                 commentsCount: 1,
                 sharesCount: 1,
-                savesCount: 1,
+                bookmarksCount: 1,
                 isBookmark: 1,
                 isFollowingAuthor: 1,
                 createdAt: 1

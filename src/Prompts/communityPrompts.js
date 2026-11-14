@@ -1,6 +1,5 @@
 
 const MAX_MESSAGE_LENGTH = 6000;
-
 const DEFAULT_MODE = "ask";
 
 const BASE_RULES = `
@@ -15,6 +14,9 @@ Style:
 - Use simple words and short sentences. Avoid unnecessary jargon.
 - Use Markdown. Put all code inside fenced code blocks with the language name.
 - Be short and clear. Do not repeat the user's code unless you are fixing it.
+- Write Markdown only. Never use HTML tags like <br>.
+- Avoid tables. Use short headings and bullet lists instead.
+- If a table is really needed, use at most 3 columns and one short phrase per cell (no bullets or line breaks inside a cell).
 
 Scope:
 - Help only with programming and software development.

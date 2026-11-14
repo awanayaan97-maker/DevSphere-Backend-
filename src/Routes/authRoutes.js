@@ -1,14 +1,33 @@
 
 const express = require("express");
-const { signup, login, OTPVerification, resendOTP, forgotPassword, resetPassword, googleAuthController, deactivateAccount } = require("../Controllers/authController");
-const verifyGoogleToken = require("../Middlewares/verifyGoogleToken");
-
+const router = express.Router();
 const authMiddleware = require("../Middlewares/auhMiddleware");
 const validateMiddleware = require("../Middlewares/validateMiddleware");
-const { signupLimiter, loginLimiter, emailLimiter } = require("../Middlewares/rateLimiter")
-const { signupSchema, loginSchema, OTPSchema, resendOTPSchema, forgotPasswordSchema, resetPasswordSchema, deactivateAccountSchema } = require("../Validators/authValidation");
+const verifyGoogleToken = require("../Middlewares/verifyGoogleToken");
+const { signupLimiter, loginLimiter, emailLimiter } = require("../Middlewares/rateLimiter");
 
-const router = express.Router();
+const { 
+    signup, 
+    login, 
+    OTPVerification, 
+    resendOTP, 
+    forgotPassword, 
+    resetPassword, 
+    googleAuthController, 
+    deactivateAccount 
+} = require("../Controllers/authController");
+
+
+const { 
+    signupSchema, 
+    loginSchema, 
+    OTPSchema, 
+    resendOTPSchema, 
+    forgotPasswordSchema, 
+    resetPasswordSchema, 
+    deactivateAccountSchema 
+} = require("../Validators/authValidation");
+
 
 router.post("/signup", signupLimiter, validateMiddleware(signupSchema), signup)
 router.post("/google", signupLimiter, verifyGoogleToken, googleAuthController)

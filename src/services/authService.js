@@ -10,6 +10,8 @@ const PasswordReset = require("../Models/passwordResetSchema");
 
 async function signupService(userData) {
 
+    console.log(userData, "userData");
+    
     const { firstName, lastName, email, password } = userData;
 
     const userExists = await User.findOne({ email });

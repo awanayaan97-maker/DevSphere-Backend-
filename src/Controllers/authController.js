@@ -7,7 +7,9 @@ const { signupService, googleAuthService, loginService, otpVerificationService, 
 async function signup(req, res, next) {
 
   try {
-    const result = await signupService.signup(req.validated.body);
+    console.log(req.validated.body);
+    
+    const result = await signupService(req.validated.body);
     res.status(200).json(new ApiResponse(200, "Otp send successfully", result));
   }
 

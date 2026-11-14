@@ -1,6 +1,7 @@
 const DraftArticle = require("../Models/DraftArticleSchema");
 const ApiError = require("../utils/ApiError");
 const ApiResponse = require("../utils/ApiResponse");
+const mongoose = require("mongoose");
 
 
 async function getDraftArticles(req, res, next) {
@@ -25,7 +26,6 @@ async function getDraftArticles(req, res, next) {
     }
 }
 
-const mongoose = require("mongoose");
 
 async function draftArticle(req, res, next) {
 

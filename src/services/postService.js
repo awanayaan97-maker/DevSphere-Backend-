@@ -2,9 +2,19 @@ const Post = require("../Models/Post");
 const User = require("../Models/UserSchema");
 const cloudinary = require("../Config/cloudinary");
 const mongoose = require("mongoose");
+const ApiError = require("../utils/ApiError");
 
-async function createPostService(authorId, postId, text, type, tags, code, codeLanguage, existingImages) {
-
+async function createPostService(
+    authorId,
+    postId,
+    text,
+    type,
+    tags,
+    code,
+    codeLanguage,
+    existingImages,
+    files = []
+) {
     let parsedTags = [];
 
     if (tags) {
@@ -16,7 +26,6 @@ async function createPostService(authorId, postId, text, type, tags, code, codeL
     }
 
     if (postId) {
-
         const post = await Post.findOne({
             _id: postId,
             author: authorId,
@@ -62,7 +71,7 @@ async function createPostService(authorId, postId, text, type, tags, code, codeL
 
         const newImages = [];
 
-        for (const file of req.files || []) {
+        for (const file of files || []) {
             const uploaded = await cloudinary.uploader.upload(file.path, {
                 resource_type: "image",
             });
@@ -115,13 +124,13 @@ async function createPostService(authorId, postId, text, type, tags, code, codeL
                 )
         );
 
-        return post
+        return post;
     }
 
     const uploadedImages = [];
 
-    if (req.files && req.files.length > 0) {
-        for (const file of req.files) {
+    if (files && files.length > 0) {
+        for (const file of files) {
             const cloudinaryResult = await cloudinary.uploader.upload(file.path);
 
             uploadedImages.push({
@@ -132,7 +141,7 @@ async function createPostService(authorId, postId, text, type, tags, code, codeL
         }
     }
 
-    const createPost = await Post.create({
+    const createdPost = await Post.create({
         author: authorId,
         text: text || "",
         type: type || "Discussion",
@@ -142,15 +151,15 @@ async function createPostService(authorId, postId, text, type, tags, code, codeL
         images: uploadedImages,
     });
 
-    const postAuthor = await User.findById(createPost.author)
-        .select("firstName lastName role profileImage")
+    const postAuthor = await User.findById(createdPost.author)
+        .select("firstName lastName role profileImage");
 
     const newPost = {
         authorDetails: postAuthor,
-        ...createPost._doc
-    }
+        ...createdPost._doc
+    };
 
-    return newPost
+    return newPost;
 }
 
 async function getPostService(currentUser, type, topic, limit, skip, sortStage) {
@@ -278,6 +287,10 @@ async function getPostService(currentUser, type, topic, limit, skip, sortStage) 
 }
 
 async function getSinglePostService(currentUser, postId) {
+
+    console.log(currentUser);
+    console.log(postId);
+    
 
     const pipeline = [
         {
@@ -470,9 +483,9 @@ async function deletePostService(authorId, id) {
         );
     }
 
-  const deletePost = await post.deleteOne();
+    const deletePost = await post.deleteOne();
 
-  return deletePost
+    return deletePost
 
 }
 

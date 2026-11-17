@@ -10,21 +10,28 @@ const { createPostService, getPostService, getSinglePostService, deletePostServi
 const ALLOWED_TYPES = ["Discussion", "Projects", "Learning"];
 
 async function createPost(req, res, next) {
-
     try {
-
         const { postId, text, type, tags, code, codeLanguage, existingImages } = req.body;
         const authorId = req.user?.id;
+        const files = req.files;
 
-        const createPost = await createPostService(authorId, postId, text, type, tags, code, codeLanguage, existingImages)
+        const newPost = await createPostService(
+            authorId,
+            postId,
+            text,
+            type,
+            tags,
+            code,
+            codeLanguage,
+            existingImages,
+            files
+        );
 
         return res
             .status(201)
-            .json(new ApiResponse(201, "Post created successfully.", createPost));
+            .json(new ApiResponse(201, "Post created successfully.", newPost));
 
-    }
-
-    catch (error) {
+    } catch (error) {
         next(error);
     }
 };

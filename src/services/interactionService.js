@@ -12,7 +12,7 @@ const ApiError = require("../utils/ApiError");
 const getTargetConfig = (targetType) => {
     if (targetType === "article") {
         return { model: PublishArticle, fieldName: "article" };
-    } else if (targetType === "post") {
+    } else if (targetType === "Post") {
         return { model: Post, fieldName: "post" };
     }
     throw new ApiError(400, "Invalid target type");
@@ -96,7 +96,7 @@ async function toggleLikeService(userId, targetId, targetType) {
 
     const { model: Model, fieldName } = getTargetConfig(targetType);
     const targetDoc = await Model.findById(targetId);
-
+    
     if (!targetDoc) {
         throw new ApiError(404, `${targetType} not found`);
     }
@@ -137,18 +137,20 @@ async function toggleLikeService(userId, targetId, targetType) {
             User.findOne({ _id: userId }).select("firstName lastName profileImage role _id"),
         ]);
 
+        
         const likesCount = updateResult.likes.length;
         let notificationData = null;
         let shouldEmit = false;
-
         const isSelfAction = updateResult.author.toString() === userId.toString();
 
         if (checkNotification === null && !isSelfAction) {
+
             const newNotification = await Notification.create({
                 sender: userId,
                 receiver: updateResult.author,
                 type: "like",
                 [fieldName]: targetId,
+                onModal: targetType,
                 message: `${senderData.firstName} ${senderData.lastName} liked your ${targetType}`,
             });
 
@@ -158,6 +160,7 @@ async function toggleLikeService(userId, targetId, targetType) {
                 likesCount,
                 [fieldName]: targetId,
             };
+
             shouldEmit = true;
         }
 
@@ -293,7 +296,7 @@ async function getCommentsService(targetId, userId, targetType) {
         },
         {
             $addFields: {
-               isLiked: parsedUserId ? { $in: [parsedUserId, "$likes"] } : false,
+                isLiked: parsedUserId ? { $in: [parsedUserId, "$likes"] } : false,
                 likesCount: { $size: "$likes" },
                 replies: {
                     $map: {
@@ -367,7 +370,8 @@ async function toggleCommentLikeService(userId, commentId, targetType) {
             Notification.deleteOne({
                 sender: userId,
                 receiver: commentDoc.user,
-                type: "comment_like"
+                type: "comment_like",
+                comment: commentDoc._id
             })
         ]);
 
@@ -380,22 +384,28 @@ async function toggleCommentLikeService(userId, commentId, targetType) {
             Notification.findOne({
                 sender: userId,
                 receiver: commentDoc.user,
-                type: "comment_like"
+                type: "comment_like",
+                comment: commentDoc._id
             }),
             User.findOne({ _id: userId }).select("firstName lastName profileImage role _id")
         ]);
 
+    
         let notificationData = null;
         let shouldNotify = false;
-
         const isSelfAction = commentDoc.user.toString() === userId.toString();
 
         if (checkNotification === null && !isSelfAction) {
+
+            const modelName = targetType === "post" ? "PostComment" : "ArticleComments";
             const newNotification = await Notification.create({
                 sender: userId,
                 receiver: commentDoc.user,
                 type: "comment_like",
-                [config.notificationField]: commentDoc[config.idField],
+                post: commentDoc.postId || null,
+                article: commentDoc.articleId || null,
+                comment: commentDoc._id || null,
+                onModal: modelName,
                 message: `${senderData.firstName} ${senderData.lastName} liked your comment`
             });
 
@@ -403,6 +413,7 @@ async function toggleCommentLikeService(userId, commentId, targetType) {
                 ...newNotification._doc,
                 senderData
             };
+
             shouldNotify = true;
         }
 

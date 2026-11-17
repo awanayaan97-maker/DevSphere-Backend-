@@ -33,6 +33,18 @@ const NotificationSchema = new mongoose.Schema({
         default: null
     },
 
+    comment: {
+        type: mongoose.Schema.Types.ObjectId,
+        refPath: 'onModal',
+        default: null
+    },
+
+    onModal: {
+        type: String,
+        require: true,
+        enum: ['PostComment', 'ArticleComments', 'Post', 'PublishArticle']
+    },
+
     message: {
         type: String,
         required: true

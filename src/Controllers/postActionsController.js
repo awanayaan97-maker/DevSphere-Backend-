@@ -10,7 +10,7 @@ async function likePost(req, res, next) {
     try {
         const userId = req.user.id;
         const { id: postId } = req.params;
-        const result = await toggleLikeService(userId, postId, "post");
+        const result = await toggleLikeService(userId, postId, "Post");
 
         if (result.shouldEmit) {
             req.io.to(result.receiverId).emit("like_notification", result.notificationData);
@@ -113,6 +113,8 @@ async function togglePostCommentLike(req, res, next) {
         }
 
         const result = await toggleCommentLikeService(userId, id, "post");
+
+        console.log("Emitting comment_like to room:", result.receiverId, result.notificationData);
 
         if (result.shouldNotify) {
             req.io.to(result.receiverId).emit("comment_like_notification", result.notificationData);

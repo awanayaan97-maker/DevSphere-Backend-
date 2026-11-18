@@ -69,6 +69,8 @@ async function getUserService(userId) {
                             type: 1,
                             message: 1,
                             isRead: 1,
+                            article: 1,
+                            post: 1,
                             createdAt: 1,
                         }
                     }

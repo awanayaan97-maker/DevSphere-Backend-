@@ -12,7 +12,7 @@ async function likeArticle(req, res, next) {
         const userId = req.user.id;
         const { articleId } = req.params;
         const result = await toggleLikeService(userId, articleId, "article");
-
+       
         if (result.shouldEmit) {
             req.io.to(result.receiverId).emit("like_notification", result.notificationData);
         }
@@ -32,7 +32,7 @@ async function commentArticle(req, res, next) {
     try {
         const { text, parentComment } = req.body;
         const { id: articleId } = req.params;
-        const userId = req.user.id;
+        const userId = req.user.id;        
 
         if (!text?.trim()) {
             throw new ApiError(400, "Comment text is required");

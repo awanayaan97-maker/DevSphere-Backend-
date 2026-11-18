@@ -145,12 +145,13 @@ async function toggleLikeService(userId, targetId, targetType) {
 
         if (checkNotification === null && !isSelfAction) {
 
+            const modelName = targetType === "Post" ? 'Post' : 'PublishArticle'
             const newNotification = await Notification.create({
                 sender: userId,
                 receiver: updateResult.author,
                 type: "like",
                 [fieldName]: targetId,
-                onModal: targetType,
+                onModal: modelName,
                 message: `${senderData.firstName} ${senderData.lastName} liked your ${targetType}`,
             });
 
@@ -177,14 +178,13 @@ async function toggleLikeService(userId, targetId, targetType) {
 async function createCommentService(userId, targetId, text, parentComment, targetType) {
 
     const config = getCommentConfig(targetType);
-
     const newComment = await config.commentModel.create({
         [config.idField]: targetId,
         user: userId,
         text,
         parentComment: parentComment || null
     });
-
+    
     if (!newComment) {
         throw new ApiError(500, "Something went wrong while creating comment");
     }
@@ -207,7 +207,9 @@ async function createCommentService(userId, targetId, text, parentComment, targe
         receiverId = ownerDoc?.author;
         notificationMessage = `${senderData.firstName} ${senderData.lastName} commented on your ${targetType}`;
         type = "comment";
-    } else {
+    } 
+    
+    else {
         const parentCommentDoc = await config.commentModel.findById(parentComment).select("user");
         receiverId = parentCommentDoc?.user;
         notificationMessage = `${senderData.firstName} ${senderData.lastName} replied to your comment`;
@@ -218,10 +220,14 @@ async function createCommentService(userId, targetId, text, parentComment, targe
     let shouldNotify = false;
 
     if (receiverId && receiverId.toString() !== userId.toString()) {
+
+        const modelName = targetType === "article" ? 'ArticleComments' : 'PostComment'
         const newNotification = await Notification.create({
             sender: userId,
             receiver: receiverId,
-            [config.notificationField]: targetId,
+            article: newComment.articleId || null,
+            post: newComment.postId || null,
+            onModal: modelName,
             type: type,
             message: notificationMessage
         });

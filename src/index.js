@@ -28,7 +28,7 @@ const dashboardRoute = require("./Routes/dashboardRoutes");
 
 app.use(helmet());
 app.use(cors());
-app.use(express.json({limit: "1mb"}));
+app.use(express.json({ limit: "1mb" }));
 app.use(ipLimiter)
 
 const server = http.createServer(app);
@@ -44,8 +44,7 @@ const io = new Server(server, {
 
 io.on("connection", (socket) => {
 
-     console.log(`User connected: ${socket.id}`);
-
+    console.log(`User connected: ${socket.id}`);
     const token = socket.handshake.auth.token;
 
     if (!token) {
@@ -53,14 +52,12 @@ io.on("connection", (socket) => {
     }
 
     try {
-      
+
         const decodeToken = jwt.verify(token, process.env.JWT_SECRET);
-
         const userId = decodeToken.id.toString();
-
         socket.join(userId)
-    } 
-    
+    }
+
     catch (error) {
         socket.disconnect()
     }
@@ -74,8 +71,8 @@ io.on("connection", (socket) => {
 connectDB()
 
 app.use((req, res, next) => {
-      req.io = io,
-      next()
+    req.io = io,
+        next()
 })
 
 app.get("/", (req, res) => {

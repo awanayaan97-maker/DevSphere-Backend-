@@ -7,21 +7,21 @@ const authMiddleware = require("../Middlewares/auhMiddleware");
 const optionalAuthMiddleware = require("../Middlewares/optionalAuthMiddleware");
 const { userLimiter } = require("../Middlewares/rateLimiter");
 
-const { 
-    getUser, 
-    getUserWithArticles, 
-    updateUser, 
-    followUser, 
-    getConnections, 
-    getPublicUser, 
-    markNotificationsAsRead 
+const {
+    getUser,
+    getUserWithArticles,
+    updateUser,
+    followUser,
+    getConnections,
+    getPublicUser,
+    markNotificationsAsRead
 } = require("../Controllers/userController");
 
-const { 
-    userArticleSchema, 
-    getPublicUserSchema, 
-    userConnectionSchema, 
-    userFollowSchema 
+const {
+    userArticleSchema,
+    getPublicUserSchema,
+    userConnectionSchema,
+    userFollowSchema
 } = require("../Validators/userValidation");
 
 
@@ -31,8 +31,7 @@ router.get("/public/:id", optionalAuthMiddleware, validateMiddleware(getPublicUs
 router.get("/connections/:type", authMiddleware, validateMiddleware(userConnectionSchema), getConnections);
 
 router.put("/", authMiddleware, userLimiter, upload.fields([{ name: "profileImage", maxCount: 1 }, { name: "coverImage", maxCount: 1 }]), updateUser),
-    router.put("/notification", authMiddleware, markNotificationsAsRead)
-
+router.put("/notification", authMiddleware, markNotificationsAsRead)
 router.post("/follow", authMiddleware, validateMiddleware(userFollowSchema), followUser)
 
 module.exports = router

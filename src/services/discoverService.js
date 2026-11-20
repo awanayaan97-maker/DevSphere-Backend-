@@ -1,33 +1,9 @@
-const BookMark = require("../Models/BookmarkSchema");
+
 const Follow = require("../Models/FollowSchema");
-const Post = require("../Models/Post");
-const PostBookmark = require("../Models/PostBookmark");
-const PublishArticle = require("../Models/PublishArticleSchema");
 const User = require("../Models/UserSchema");
-const mongoose = require("mongoose")
+const mongoose = require("mongoose");
+const { BOOKMARK_SOURCES, TAG_SOURCES } = require('../constants/discoverConstants')
 
-
-const BOOKMARK_SOURCES = {
-    articles: {
-        Model: BookMark,
-        field: "article",
-        from: "publisharticles",
-        commentsFrom: "articlecomments",
-        commentsKey: "articleId"
-    },
-    posts: {
-        Model: PostBookmark,
-        field: "post",
-        from: "posts",
-        commentsFrom: "postcomments",
-        commentsKey: "postId"
-    }
-};
-
-const TAG_SOURCES = {
-    articles: PublishArticle,
-    posts: Post
-};
 
 async function getDiscoverDevelopersService(currentUserId) {
 
@@ -237,6 +213,7 @@ async function getBookmarkedService(source, userId) {
                 as: "authorDetails"
             }
         },
+
         { $unwind: "$authorDetails" },
 
         {
@@ -311,7 +288,6 @@ async function getBookmarkedService(source, userId) {
     ];
 
     const data = await Model.aggregate(pipeline);
-
     return data
 
 }

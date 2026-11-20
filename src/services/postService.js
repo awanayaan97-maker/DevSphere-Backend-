@@ -288,10 +288,6 @@ async function getPostService(currentUser, type, topic, limit, skip, sortStage) 
 
 async function getSinglePostService(currentUser, postId) {
 
-    console.log(currentUser);
-    console.log(postId);
-    
-
     const pipeline = [
         {
             $match: {

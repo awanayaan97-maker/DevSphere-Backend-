@@ -159,7 +159,6 @@ async function exploreArticles(req, res, next) {
         };
 
         const exploreArticles = await exploreArticlesService(queryParams);
-
         return res.status(200).json(
             new ApiResponse(200, "Explore articles fetched successfully", exploreArticles)
         );

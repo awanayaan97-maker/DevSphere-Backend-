@@ -27,19 +27,20 @@ const aiRoute = require("./Routes/aiRoutes");
 const dashboardRoute = require("./Routes/dashboardRoutes");
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+    origin: [process.env.FRONTEND_URL, "http://localhost:5173"].filter(Boolean),
+    credentials: true
+}));
 app.use(express.json({ limit: "1mb" }));
 app.use(ipLimiter)
 
 const server = http.createServer(app);
-
 const io = new Server(server, {
-
     cors: {
-        origin: "*",
-        methods: ["GET", "POST", "PATCH", "DELETE"]
+        origin: [process.env.FRONTEND_URL, "http://localhost:5173"].filter(Boolean),
+        methods: ["GET", "POST", "PATCH", "DELETE"],
+        credentials: true
     }
-
 })
 
 io.on("connection", (socket) => {
@@ -89,8 +90,20 @@ app.use("/api/dashboard", dashboardRoute)
 
 app.use(errorMiddleware)
 
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 3000
 
-server.listen(PORT, () => {
-    console.log(`Server is working on Port ${PORT}`);
-})
+async function startServer() {
+    try {
+        await connectDB();
+
+        server.listen(PORT, () => {
+            console.log(`Server running on port ${PORT}`);
+        });
+
+    } catch (error) {
+        console.error("Server startup failed:", error.message);
+        process.exit(1);
+    }
+}
+
+startServer();

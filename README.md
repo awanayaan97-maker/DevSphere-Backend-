@@ -1,209 +1,382 @@
 
-DevSphere Backend 
-The API and real-time engine behind DevSphere
-DevSphere is a developer community and knowledge-sharing platform. This repository contains the backend that powers its authentication, articles, community posts, user connections, dashboard data, AI assistants, media uploads, and real-time notifications.
 
-Built as part of a three-month full-stack development project, this backend focuses on separating request handling from business logic, validating incoming data, protecting API routes, and connecting multiple services into one application.
+# DevSphere Backend
+### Powering a Developer Community & Knowledge Sharing Platform
 
-Live Application: https://devsphere-app.netlify.app/
-Live Backend: https://dev-sphere-backend-six.vercel.app/
-Frontend Repository: https://github.com/awanayaan97-maker/DevSphere-Frontend
-Backend Repository: https://github.com/awanayaan97-maker/DevSphere-Backend-
-What This Backend Powers
+**Built to connect developers. Engineered to handle real-world interactions.**
 
-Authentication & Account Management
-- Email and password signup and login.
-- Email OTP verification and OTP resend.
-- Google authentication using Google ID token verification.
-- Password reset through time-limited reset links.
-- Password hashing with bcrypt.
-- JWT-based authentication for protected routes.
-- Account deactivation.
+The DevSphere Backend is the server-side foundation of a full-stack developer community platform. It powers authentication, user management, technical articles, community posts, real-time notifications, AI-powered assistance, and dashboard analytics.
 
-Article Management
-- Create, update, publish, and delete articles.
-- Save articles as drafts and manage draft content.
-- Retrieve article feeds, search results, and explore content.
-- Article comments, nested replies, likes, and bookmarks.
-- Image uploads for article content through Cloudinary.
+Developed with Node.js, Express, and MongoDB, the backend follows a modular architecture that separates routes, controllers, services, models, middleware, and validation logic.
 
-Developer Community
-- Create and retrieve community posts.
-- Support for post images and code-snippet content submitted by the frontend.
-- Like posts and comments.
-- Create, edit, and delete comments, including replies.
+The goal was to build more than basic CRUD APIs — to understand and implement how different backend systems work together in a real-world application.
+
+ **Live Application:** https://devsphere-app.netlify.app/
+
+ **Live Backend:** https://dev-sphere-backend-six.vercel.app/
+
+ **Backend Repository:** https://github.com/awanayaan97-maker/DevSphere-Backend-
+
+ **Frontend Repository:** https://github.com/awanayaan97-maker/DevSphere-Frontend
+
+---
+
+## Backend Architecture
+
+DevSphere uses a modular and organized backend structure to keep responsibilities separated and make the codebase easier to maintain.
+
+```text
+src/
+│
+├── Config/
+│   ├── cloudinary.js
+│   ├── db.js
+│   └── email.js
+│
+├── Controllers/
+│   ├── aiController.js
+│   ├── authController.js
+│   ├── articleActionsController.js
+│   ├── postActionsController.js
+│   ├── userController.js
+│   ├── dashboardController.js
+│   ├── discoverController.js
+│   └── ...
+│
+├── Middlewares/
+│   ├── auhMiddleware.js
+│   ├── errorMiddleware.js
+│   ├── rateLimiter.js
+│   ├── validateMiddleware.js
+│   ├── multer.js
+│   └── ...
+│
+├── Models/
+│   ├── UserSchema.js
+│   ├── PublishArticleSchema.js
+│   ├── DraftArticleSchema.js
+│   ├── Post.js
+│   ├── NotificationSchema.js
+│   └── ...
+│
+├── Prompts/
+│   ├── articlePrompts.js
+│   └── communityPrompts.js
+│
+├── Routes/
+│   ├── authRoutes.js
+│   ├── userRoutes.js
+│   ├── articleRoutes.js
+│   ├── postRoutes.js
+│   ├── discoverRoutes.js
+│   ├── aiRoutes.js
+│   └── dashboardRoutes.js
+│
+├── services/
+│   ├── authService.js
+│   ├── articleService.js
+│   ├── postService.js
+│   ├── interactionService.js
+│   ├── userService.js
+│   ├── aiService.js
+│   └── ...
+│
+├── Validators/
+├── utils/
+├── constants/
+└── index.js
+```
+
+### How the Architecture Works
+
+- **Routes:** Define API endpoints and connect requests to their respective controllers.
+- **Middlewares:** Handle authentication, authorization, rate limiting, file uploads, and error handling.
+- **Validators:** Validate incoming request data using Zod.
+- **Controllers:** Handle incoming requests and send appropriate responses.
+- **Services:** Contain application business logic and database operations.
+- **Models:** Define MongoDB document structures using Mongoose.
+- **Config:** Manage database, email, and Cloudinary configuration.
+- **Prompts:** Organize instructions for the different AI assistants.
+- **Utils:** Provide reusable helpers, API responses, errors, and token utilities.
+
+---
+
+## Core Features
+
+### Authentication & Account Security
+
+- User registration with email OTP verification.
+- OTP resend functionality.
+- Password hashing using bcrypt.
+- User login with JWT authentication.
+- Google authentication using Google OAuth.
+- Secure password reset using time-limited reset tokens.
+- Password reset token hashing before database storage.
+- Account deactivation and reactivation support.
+
+### Article Management
+
+- Create, publish, edit, and delete articles.
+- Save articles as drafts.
+- Publish previously saved drafts.
+- Article search and explore functionality.
+- Article feeds with All and Following options.
+- Article comments and replies.
+- Like articles and comments.
+- Bookmark articles.
+- Image uploads through Cloudinary.
+- Article-specific AI assistance.
+
+### Community & Posts
+
+- Create community posts with text and images.
+- Upload multiple post images.
+- Share programming code snippets through the frontend integration.
+- Like and interact with posts.
+- Add comments and replies.
+- Like comments.
 - Bookmark posts.
-- Upload and manage post images through Cloudinary.
+- Retrieve community feeds and individual posts.
 
-User Profiles & Connections
-- Retrieve private and public user profiles.
-- Update profile information, profile images, and cover images.
+### User & Social Connections
+
+- Retrieve and update user profiles.
+- Public profile access.
 - Follow and unfollow developers.
-- Retrieve follower and following connections.
-- Retrieve a user's articles.
+- Retrieve followers and following lists.
+- Retrieve user articles.
+- Notification management.
 
-Discovery
+### AI-Powered Assistance
+
+DevSphere integrates Groq-powered AI assistance through two separate experiences.
+
+**Article AI Assistant**
+- Receives the current article's title and content.
+- Converts article HTML content into readable text.
+- Answers questions based on the article.
+- Supports quick actions and conversational history.
+
+**Community AI Assistant**
+- Provides general-purpose programming assistance.
+- Supports four modes:
+  - Ask
+  - Explain
+  - Debug
+  - Review
+- Processes conversation history to maintain context.
+
+### Real-Time Notifications
+
+- Real-time communication using Socket.IO.
+- Authenticated socket connections using JWT.
+- User-specific notification rooms.
+- Redis adapter integration for Socket.IO.
+- Redis Pub/Sub clients through ioredis.
+
+### Dashboard & Analytics
+
+- Dashboard summary statistics.
+- Top-performing articles.
+- Followers analytics chart.
+- User content management.
+- Article and post management.
+
+### Discover & Explore
+
 - Retrieve popular tags.
 - Discover developers.
 - Retrieve bookmarked content.
+- Explore content and developer profiles.
 
-Dashboard
-- Dashboard summary statistics.
-- Top articles.
-- Followers chart data.
-- User content data for dashboard views.
+---
 
-AI Assistants
-DevSphere provides two AI experiences powered by the Groq SDK:
-- Article Assistant: Receives the relevant article content as context to answer questions about that article.
-- Community Assistant: A general-purpose programming assistant with Ask, Explain, Debug, and Review modes. It is not supplied with the content of a particular community post.
+## Security & Validation
 
-Real-Time Notifications
-- Socket.IO handles real-time client connections and notification events.
-- Socket connections are authenticated using the application's JWT.
-- The Socket.IO Redis adapter uses Redis publisher and subscriber connections to support communication across Socket.IO server instances.
+Security and request validation are important parts of the backend implementation.
 
-Backend Architecture
-The codebase is organized by responsibility, separating API routing, request validation, controllers, business services, database models, and shared utilities.
-src/
-├── Config/          # MongoDB, Cloudinary, and email configuration
-├── constants/       # Shared categories and discovery constants
-├── Controllers/     # HTTP request and response handling
-├── Middlewares/     # Authentication, validation, uploads, errors, rate limits
-├── Models/          # Mongoose schemas and data models
-├── Prompts/         # AI assistant system prompts
-├── Routes/          # API route definitions
-├── services/        # Application business logic
-├── uploads/         # Local upload directory
-├── utils/           # Tokens, responses, errors, pagination, helpers
-├── Validators/      # Zod validation schemas
-└── index.js          # Express app, Socket.IO, Redis, and route setup
-Request flow
-Client Request
-     ↓
-   Routes
-     ↓
-Authentication / Validation / Rate Limiting
-     ↓
-  Controllers
-     ↓
-   Services
-     ↓
- Mongoose Models
-     ↓
-   MongoDB
-Controllers handle HTTP concerns, while services contain reusable application logic. Shared interaction operations are centralized in an interaction service for article and post interactions.
+- **JWT Authentication:** Protects authenticated API routes.
+- **Password Hashing:** Uses bcrypt to securely hash user passwords.
+- **Google Token Verification:** Validates Google authentication tokens.
+- **Zod Validation:** Validates request bodies, parameters, and query data.
+- **Rate Limiting:** Uses express-rate-limit with separate limits for IP addresses, users, login, signup, email, and AI requests.
+- **Helmet:** Adds HTTP security-related headers.
+- **CORS:** Configures permitted frontend origins.
+- **Centralized Error Handling:** Handles application errors through reusable middleware.
+- **OTP & Password Reset:** Uses hashed verification credentials and time-limited database records.
 
-Technology Stack
-Category	Technologies
-Runtime	Node.js
-Backend Framework	Express 5
-Database	MongoDB, Mongoose
-Authentication	JSON Web Token (JWT), bcrypt
-Google Authentication	google-auth-library
-Real-Time Communication	Socket.IO
-Cross-Instance Socket Adapter	Socket.IO Redis Adapter, ioredis
-Cache / Messaging Infrastructure	Redis (configured through REDIS_URL)
-AI Integration	Groq SDK
-Image Storage	Cloudinary, Multer
-Email	Nodemailer
-Validation	Zod
-Security Middleware	Helmet, express-rate-limit
-HTML Processing	Cheerio, html-to-text
+---
 
+## Real-Time Architecture with Redis
 
-Security & Request Handling
-- JWT middleware protects authenticated API endpoints.
-- Optional authentication middleware supports routes that can serve both signed-in and signed-out visitors.
-- Passwords are hashed using bcrypt.
-- Zod schemas validate selected request bodies, query parameters, and route parameters.
-- Helmet applies common HTTP security headers.
-- Rate limiters are configured for IP-level traffic and selected user, authentication, email, and AI operations.
-- A centralized error middleware handles application errors.
-- Google ID tokens are verified through Google's authentication library.
-Note: The current authentication implementation uses JWTs. Separate access-token and refresh-token rotation flows are not currently implemented.
+DevSphere uses Socket.IO for real-time communication between the backend and connected clients.
 
-API Route Groups
-The backend mounts the following API groups:
-Base Path	Purpose
-/api/auth	Signup, login, OTP verification, Google auth, password reset, account deactivation
-/api/user	Profiles, profile updates, connections, follows, notifications
-/api/article	Published articles, drafts, search, comments, likes, bookmarks, image uploads
-/api/post	Community posts, comments, likes, bookmarks, image uploads
-/api/discover	Popular tags, developer discovery, bookmarks
-/api/ai	Article and community AI chat endpoints
-/api/dashboard	Dashboard summary, top articles, follower chart, content
+To support Socket.IO communication through Redis, the backend integrates:
 
+- Socket.IO
+- ioredis
+- Socket.IO Redis Adapter
+- Redis Pub/Sub connections
 
-Getting Started
-Prerequisites
-Make sure you have the following:
+The Redis adapter enables Socket.IO servers to communicate through Redis Pub/Sub, supporting real-time event distribution across multiple server instances.
+
+---
+
+## Technology Stack
+
+| Category | Technologies |
+|---|---|
+| Runtime | Node.js |
+| Backend Framework | Express 5 |
+| Database | MongoDB |
+| ODM | Mongoose |
+| Authentication | JWT, bcrypt, Google OAuth |
+| Real-Time Communication | Socket.IO |
+| Redis Integration | ioredis, Socket.IO Redis Adapter |
+| AI Integration | Groq SDK |
+| File Uploads | Multer, Cloudinary |
+| Email Service | Nodemailer |
+| Validation | Zod |
+| Security | Helmet, express-rate-limit |
+| HTML Processing | Cheerio, html-to-text |
+
+---
+
+## API Structure
+
+The backend organizes its API endpoints into dedicated route modules.
+
+| Route Prefix | Responsibility |
+|---|---|
+| `/api/auth` | Signup, login, OTP verification, Google authentication, password reset |
+| `/api/user` | User profiles, connections, following, notifications |
+| `/api/article` | Articles, drafts, comments, likes, bookmarks, image uploads |
+| `/api/post` | Community posts, comments, likes, bookmarks |
+| `/api/discover` | Popular tags, bookmarks, developer discovery |
+| `/api/ai` | Article and Community AI assistants |
+| `/api/dashboard` | Dashboard statistics, top articles, followers chart, content |
+
+---
+
+## Getting Started
+
+Follow these instructions to run the backend locally.
+
+### Prerequisites
+
+Make sure you have installed:
+
 - Node.js
 - npm
-- MongoDB connection string
-- Redis connection URL
-- Google OAuth credentials (for Google authentication)
-- Cloudinary credentials (for image uploads)
-- Groq API key and model (for AI features)
-- Email account credentials for sending application emails
-1. Clone the repository
+- MongoDB database
+- Redis instance
+- Git
+
+You will also need the credentials for the external services you want to use, such as Cloudinary, Google OAuth, Groq, and your email provider.
+
+### 1. Clone the Repository
+
+```bash
 git clone https://github.com/awanayaan97-maker/DevSphere-Backend-.git
-2. Navigate to the project directory
+```
+
+### 2. Navigate to the Project
+
+```bash
 cd DevSphere-Backend-
-3. Install dependencies
+```
+
+### 3. Install Dependencies
+
+```bash
 npm install
-4. Configure environment variables
-Create a .env file in the project root. You can use .env.example as a reference and provide your own credentials:
+```
+
+### 4. Configure Environment Variables
+
+Create a `.env` file in the root directory.
+
+Use the provided `.env.example` as a reference and configure the required values:
+
+```env
 PORT=3000
+
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret
-
-FRONTEND_URL=http://localhost:5173
-
-REDIS_URL=your_redis_connection_url
 
 PORTAL_EMAIL=your_email_address
 PORTAL_PASSWORD=your_email_app_password
 
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 
 GROQ_API_KEY=your_groq_api_key
 GROQ_MODEL=your_groq_model
-Use the matching environment values for your own setup. FRONTEND_URL should point to the frontend origin allowed to communicate with this backend. For local frontend development, use http://localhost:5173; for the deployed application, use https://devsphere-app.netlify.app in the backend deployment environment.
 
-Important: Never commit your real .env file or expose private credentials. Keep .env.example limited to variable names and safe placeholders.
-5. Run the development server
+REDIS_URL=your_redis_connection_url
+
+FRONTEND_URL=http://localhost:5173
+```
+
+**Important:** Never commit your actual `.env` file or expose private credentials in a public repository.
+
+### 5. Start the Development Server
+
+```bash
 npm run start:dev
-The development script uses Node.js watch mode and starts the application from src/index.js.
-6. Run the production start command
+```
+
+This starts the backend using Node.js watch mode.
+
+### 6. Start the Production Server Locally
+
+```bash
 npm start
-The server uses the PORT environment variable when provided, otherwise it defaults to port 3000.
+```
 
-Deployment
-The current application deployment uses:
-Component	Platform / Service
-Frontend	Netlify
-Backend	Vercel
-Database	MongoDB
-Redis	Redis-compatible service configured through REDIS_URL
-Image Storage	Cloudinary
-AI Provider	Groq
+The backend runs on port `3000` by default unless another port is configured.
 
+---
 
-When deploying the backend, configure all required environment variables in the hosting provider's project settings. Do not rely on a local .env file being available in the deployment environment.
+## Deployment
 
-License
-This project is licensed under the MIT License. See the LICENSE file for details.
+DevSphere uses separate hosting platforms for its frontend and backend.
 
-Developer
-Ayaan Waheed
-GitHub Profile
+| Component | Platform |
+|---|---|
+| Frontend | Netlify |
+| Backend | Vercel |
+| Database | MongoDB |
+| Redis | Redis-compatible service |
 
-DevSphere is a practical full-stack project built to explore how authentication, content management, community interactions, AI integration, database operations, and real-time communication work together in a single application.
+**Live Application:** https://devsphere-app.netlify.app/
 
-If you find the project interesting, feel free to explore the repositories and the live application.
+**Live Backend:** https://dev-sphere-backend-six.vercel.app/
+
+---
+
+## License
+
+This project is licensed under the **MIT License**.
+
+You are free to use, modify, and distribute this project under the terms of the MIT License. See the [LICENSE](./LICENSE) file for details.
+
+---
+
+## About the Developer
+
+**Ayaan Waheed**
+
+DevSphere represents a hands-on journey into full-stack development, with a strong focus on understanding backend architecture and implementing real application functionality.
+
+Building this backend involved working with authentication, database relationships, reusable business logic, API validation, real-time communication, AI integration, and external services.
+
+The objective was to understand how these technologies work together to power a complete developer community platform.
+
+Feel free to explore the repository, review the implementation, and learn from the project.
+
+**GitHub:** https://github.com/awanayaan97-maker

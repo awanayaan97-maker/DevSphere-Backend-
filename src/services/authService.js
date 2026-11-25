@@ -10,10 +10,7 @@ const PasswordReset = require("../Models/passwordResetSchema");
 
 async function signupService(userData) {
 
-    console.log(userData, "userData");
-    
     const { firstName, lastName, email, password } = userData;
-
     const userExists = await User.findOne({ email });
     if (userExists) {
         throw new ApiError(409, "An account with this email already exists.");

@@ -13,9 +13,8 @@ async function sendOTP(email, otp) {
 
 async function sendPasswordReset(email, token) {
 
-    const resetLink =
-        `http://localhost:5173/reset-password/${token}`;
-
+   const resetLink =
+    `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
     await transporter.sendMail({
 

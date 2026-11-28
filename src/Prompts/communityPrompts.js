@@ -84,7 +84,6 @@ Mode: REVIEW. Review the code like a friendly senior developer.
 function resolveMode(mode) {
 
     if (mode === undefined || mode === null || mode === "") return DEFAULT_MODE;
-
     return Object.hasOwn(MODES, mode) ? mode : null;
 }
 
@@ -93,9 +92,7 @@ function buildSystemPrompt(mode) {
 }
 
 function buildUserMessage(message) {
-
     const safe = message.replace(/<\/?user_input>/gi, "");
-
     return `<user_input>\n${safe}\n</user_input>`;
 }
 

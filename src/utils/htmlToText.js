@@ -16,7 +16,6 @@ function htmlToText(html = "") {
     });
 
     const clean = text.trim();
-
     return clean.length > MAX_CHARS ? clean.slice(0, MAX_CHARS) : clean;
 }
 

@@ -61,10 +61,6 @@ async function articleChat(req, res, next) {
             throw new ApiError(400, `Message must be ${MAX_MESSAGE_LENGTH} characters or less.`);
         }
 
-        // TODO (baad mein): yahan rozana limit ka check aayega
-
-
-        // ---------- STEP 3: article nikalna ----------
         const article = await PublishArticle
             .findById(articleId)
             .select("title content")
@@ -72,15 +68,10 @@ async function articleChat(req, res, next) {
 
         if (!article) throw new ApiError(404, "Article not found.");
 
-
-        // ---------- STEP 4: HTML se text ----------
         const text = htmlToText(article.content);
-
         if (!text) throw new ApiError(400, "This article has no readable content.");
 
-        // ---------- STEP 5: system prompt ----------
         const system = buildSystemPrompt({ title: article.title, text });
-
         let userMessage;
 
         if (hasQuick) {
@@ -90,12 +81,7 @@ async function articleChat(req, res, next) {
             userMessage = message.trim();
         }
 
-        // ---------- STEP 7: history chhaano ----------
         const cleanedHistory = cleanHistory(history);
-
-
-        // ---------- STEP 8: AI ko bhejo ----------
-        // TODO (baad mein): yahan cache ka check aayega (summary, keyPoints...)
         const answer = await generateAnswer({
             system,
             messages: [
@@ -104,8 +90,6 @@ async function articleChat(req, res, next) {
             ]
         });
 
-
-        // ---------- STEP 9: jawab ----------
         res.status(200).json(new ApiResponse(200, "AI answer", { answer }));
 
     } catch (error) {
@@ -118,20 +102,12 @@ async function communityChat(req, res, next) {
     try {
 
         const { mode: requestedMode, message, history } = req.body ?? {};
-
-        // ---------- STEP 1: login ----------
-        if (!req.user?.id) throw new ApiError(401, "Please login to use the AI assistant.");
-
-        // ---------- STEP 2: mode ----------
-        // na aaye -> ask, galat naam -> error
         const mode = communityPrompts.resolveMode(requestedMode);
 
         if (!mode) {
             throw new ApiError(400, "Invalid mode. Use ask, explain, debug or review.");
         }
 
-
-        // ---------- STEP 3: message ki jaanch ----------
         if (typeof message !== "string" || message.trim() === "") {
             throw new ApiError(400, "Message is required.");
         }
@@ -140,38 +116,19 @@ async function communityChat(req, res, next) {
             throw new ApiError(400, `Message must be ${communityPrompts.MAX_MESSAGE_LENGTH} characters or less.`);
         }
 
-        // TODO (baad mein): yahan rozana limit ka check aayega
-
-
-        // ---------- STEP 4: system prompt ----------
         const system = communityPrompts.buildSystemPrompt(mode);
-
-
-        // ---------- STEP 5: user ka message ----------
         const userMessage = communityPrompts.buildUserMessage(message.trim());
-
-
-        // ---------- STEP 6: history chhaano ----------
         const cleanedHistory = cleanCommunityHistory(history);
-
-
-        // ---------- STEP 7: AI ko bhejo ----------
         const answer = await generateAnswer({
             system,
             messages: [
                 ...cleanedHistory,
                 { role: "user", content: userMessage }
             ],
-            maxTokens: 2000   // code wale jawab lambe hote hain
+            maxTokens: 2000
         });
 
-
-        // ---------- STEP 8: milti julti posts (baad mein) ----------
-        // Sirf debug aur ask mein. Abhi hamesha khali, frontend ko kuch nahi badalna parega
         const relatedPosts = [];
-
-
-        // ---------- STEP 9: jawab ----------
         res.status(200).json(new ApiResponse(200, "AI answer", { answer, relatedPosts }));
 
     } catch (error) {

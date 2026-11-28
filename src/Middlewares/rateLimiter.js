@@ -11,7 +11,7 @@ const LIMITS = {
     login: { windowMs: 15 * MINUTE, limit: 10 },
     signup: { windowMs: HOUR, limit: 5 },
     email: { windowMs: HOUR, limit: 5 },
-    ai: { windowMs: HOUR, limit: 15 }
+    ai: { windowMs: HOUR, limit: 8 }
 };
 
 function createLimiter({ windowMs, limit }, message, extra = {}) {

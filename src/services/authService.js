@@ -37,7 +37,6 @@ async function signupService(userData) {
 async function googleAuthService(payload) {
 
     const { email, given_name, family_name, picture } = payload;
-
     let user = await User.findOne({ email });
 
     if (!user) {

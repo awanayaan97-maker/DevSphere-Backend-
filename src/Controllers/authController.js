@@ -7,19 +7,15 @@ const { signupService, googleAuthService, loginService, otpVerificationService, 
 async function signup(req, res, next) {
 
   try {
-    console.log(req.validated.body);
-    
+
     const result = await signupService(req.validated.body);
     res.status(200).json(new ApiResponse(200, "Otp send successfully", result));
   }
 
   catch (error) {
-
     if (error.name === "ValidationError") return next(new ApiError(400, error.message))
     if (error.code === 11000) return next(new ApiError(409, "An account with this email already exists."))
-
     next(error)
-
   }
 }
 
@@ -55,7 +51,7 @@ async function login(req, res, next) {
   try {
 
     const result = await loginService(req.validated.body);
-    
+
     res.status(200).json(
       new ApiResponse(
         200,
@@ -152,8 +148,8 @@ async function deactivateAccount(req, res, next) {
     res.status(200).json(
       new ApiResponse(200, "Account deactivated successfully")
     );
-  } 
-  
+  }
+
   catch (error) {
     next(error);
   }

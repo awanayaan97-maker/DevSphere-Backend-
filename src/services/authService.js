@@ -42,7 +42,7 @@ async function googleAuthService(payload) {
     if (!user) {
         user = await User.create({
             firstName: given_name || "User",
-            lastName: family_name || "",
+            lastName: family_name || undefined,
             email,
             profileImage: picture,
             authProvider: "google"
